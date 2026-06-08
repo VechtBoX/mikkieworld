@@ -182,15 +182,27 @@ async def generate_image(page, character_name, content_type, state):
         try:
             create_btn = page.locator("text=Create From Prompt").first
             await create_btn.click(timeout=10000)
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)  # Wacht op animatie
             log.info("Categorie 'Create From Prompt' geselecteerd")
         except Exception as e:
             log.warning(f"Categorie klik mislukt (mogelijk al geselecteerd): {e}")
 
+        # Scroll naar beneden zodat de textarea zichtbaar wordt
+        await page.evaluate("window.scrollTo(0, 600)")
+        await asyncio.sleep(1)
+
         # Stap 2: Vul de prompt in
         try:
+            # Probeer meerdere selectors
             textarea = page.locator("textarea[placeholder='Enter prompt here']")
-            await textarea.wait_for(timeout=15000)
+            try:
+                await textarea.wait_for(state="visible", timeout=20000)
+            except Exception:
+                # Fallback: probeer gewoon textarea
+                textarea = page.locator("textarea").first
+                await textarea.wait_for(state="visible", timeout=10000)
+            await textarea.click()
+            await asyncio.sleep(0.5)
             await textarea.fill(prompt)
             await asyncio.sleep(1)
             log.info(f"Prompt ingevuld ({len(prompt)} tekens)")
