@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.mikkieworld.agent</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/python3</string>
+        <string>/Users/hendrikbroeze/mikkieworld/mikkie_agent.py</string>
+    </array>
+
+    <!-- Omgevingsvariabelen — worden geladen vanuit .zshrc via het script -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/Users/hendrikbroeze</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <!-- API keys worden hieronder ingevuld door install.sh -->
+        <key>GUMROAD_API_TOKEN</key>
+        <string>PLACEHOLDER_GUMROAD</string>
+        <key>MAILCHIMP_API_KEY</key>
+        <string>PLACEHOLDER_MAILCHIMP</string>
+        <key>MAILCHIMP_SERVER</key>
+        <string>us14</string>
+        <key>TWITTER_API_KEY</key>
+        <string>PLACEHOLDER_TWITTER_KEY</string>
+        <key>TWITTER_API_SECRET</key>
+        <string>PLACEHOLDER_TWITTER_SECRET</string>
+        <key>TWITTER_ACCESS_TOKEN</key>
+        <string>PLACEHOLDER_TWITTER_TOKEN</string>
+        <key>TWITTER_ACCESS_TOKEN_SECRET</key>
+        <string>PLACEHOLDER_TWITTER_TOKEN_SECRET</string>
+        <key>XAI_API_KEY</key>
+        <string>PLACEHOLDER_XAI</string>
+    </dict>
+
+    <!-- Automatisch herstarten als de agent crasht -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Start bij inloggen -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Log bestanden -->
+    <key>StandardOutPath</key>
+    <string>/Users/hendrikbroeze/mikkieworld/agent.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/hendrikbroeze/mikkieworld/agent_error.log</string>
+
+    <!-- Werkmap -->
+    <key>WorkingDirectory</key>
+    <string>/Users/hendrikbroeze/mikkieworld</string>
+
+    <!-- Wacht 10 seconden voor herstart na crash -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>
