@@ -612,21 +612,37 @@ async def generate_image(page, prompt_data):
             pass
         await asyncio.sleep(2)
 
-        # Stap 2: Klik Create From Prompt
+        # Stap 2: Klik Create From Prompt via JS op de parent group div
         try:
-            await page.wait_for_selector("text=Create From Prompt", timeout=10000)
-            await page.click("text=Create From Prompt")
-            log.info("   Categorie 'Create From Prompt' geklikt")
+            await page.wait_for_selector(".group.cursor-pointer", timeout=10000)
+            clicked_cat = await page.evaluate("""
+                () => {
+                    const divs = document.querySelectorAll('.group.cursor-pointer');
+                    for (const d of divs) {
+                        if (d.textContent.includes('Create From Prompt')) {
+                            d.click();
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            """)
+            if clicked_cat:
+                log.info("   Categorie 'Create From Prompt' geklikt via JS")
+            else:
+                log.warning("   Categorie klik via JS mislukt — probeer directe klik")
+                await page.click("text=Create From Prompt")
         except Exception as e:
             log.warning(f"   Categorie klik mislukt: {e}")
 
         await asyncio.sleep(2)
 
-        # Stap 3: Wacht tot textarea echt in de DOM staat (max 10 seconden)
+        # Stap 3: Wacht op #text-to-image-stage-2 container (bevat textarea)
         try:
-            await page.wait_for_selector('textarea[placeholder="Enter prompt here"]', timeout=10000)
+            await page.wait_for_selector('#text-to-image-stage-2', timeout=10000)
+            log.info("   Stage 2 geladen")
         except Exception:
-            log.error(f"   ❌ Textarea niet gevonden voor {char_id}")
+            log.error(f"   ❌ Stage 2 niet gevonden voor {char_id}")
             return False
 
         # Stap 4: Vul textarea via JS (React-compatible native value setter)
