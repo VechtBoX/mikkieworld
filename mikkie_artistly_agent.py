@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MIKKIE WORLD — 24/7 Artistly AI Content Agent v3.0
+MIKKIE WORLD — 24/7 Artistly AI Content Agent v4.0 (auto-download)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Gebaseerd op Paul Ponna's officiële Artistly best practices:
 
@@ -583,6 +583,85 @@ async def verify_session(page, context):
     log.info("✅ Sessie geldig — ingelogd als Hendrik!")
     return True
 
+async def download_latest_image(page, char_id, content_type, action_index=None):
+    """
+    Download de meest recent gegenereerde afbeelding van personal-designs.
+    We zijn al op /personal-designs na de redirect.
+    Strategie: extraheer de eerste CDN afbeelding URL en download via urllib.
+    """
+    try:
+        await asyncio.sleep(2)  # Wacht tot grid geladen is
+
+        # Extraheer de eerste afbeelding URL uit de designs grid
+        img_url = await page.evaluate("""
+            () => {
+                const imgs = document.querySelectorAll('img');
+                for (const img of imgs) {
+                    const src = img.src || img.getAttribute('src') || '';
+                    // Filter op CDN URLs — Artistly gebruikt AWS S3 of CloudFront
+                    if (src && src.length > 60 && (
+                        src.includes('amazonaws.com') ||
+                        src.includes('cloudfront.net') ||
+                        src.includes('cdn.artistly') ||
+                        src.includes('storage.artistly')
+                    )) {
+                        return src;
+                    }
+                }
+                // Fallback: zoek op bestandsextensie in URL
+                for (const img of imgs) {
+                    const src = img.src || '';
+                    if (src.length > 60 && (
+                        src.includes('.png') || src.includes('.jpg') || src.includes('.webp')
+                    ) && !src.includes('logo') && !src.includes('avatar') && !src.includes('icon')) {
+                        return src;
+                    }
+                }
+                return null;
+            }
+        """)
+
+        if not img_url:
+            log.warning(f"   ⚠️  Geen download URL gevonden voor {char_id} — sla over")
+            return None
+
+        # Maak een veilige bestandsnaam
+        safe_type = content_type.replace(' ', '_').replace('/', '_')
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        ext = '.png'
+        for e in ['.jpg', '.jpeg', '.webp']:
+            if e in img_url.lower():
+                ext = e
+                break
+        idx = f"_{action_index:02d}" if action_index else ""
+        filename = f"{char_id}_{safe_type}{idx}_{timestamp}{ext}"
+        output_path = OUTPUT_DIR / filename
+
+        # Download via urllib (al geïmporteerd)
+        try:
+            urllib.request.urlretrieve(img_url, str(output_path))
+            size_kb = output_path.stat().st_size // 1024
+            log.info(f"   💾 Gedownload: {filename} ({size_kb} KB)")
+            return str(output_path)
+        except Exception as dl_err:
+            # Fallback: download via Playwright page response
+            log.warning(f"   ⚠️  urllib download mislukt ({dl_err}) — probeer Playwright")
+            try:
+                response = await page.goto(img_url, wait_until='load', timeout=20000)
+                if response and response.status == 200:
+                    body = await response.body()
+                    output_path.write_bytes(body)
+                    size_kb = len(body) // 1024
+                    log.info(f"   💾 Gedownload via Playwright: {filename} ({size_kb} KB)")
+                    return str(output_path)
+            except Exception as pw_err:
+                log.warning(f"   ⚠️  Playwright download ook mislukt: {pw_err}")
+            return None
+
+    except Exception as e:
+        log.warning(f"   ⚠️  Download fout voor {char_id}: {e}")
+        return None
+
 async def generate_image(page, prompt_data):
     """
     Genereer één afbeelding via AI Image Designer v6
@@ -594,6 +673,7 @@ async def generate_image(page, prompt_data):
     5. Selecteer folder via JS
     6. Klik #generate_image_flux
     7. Wacht op redirect naar personal-designs
+    8. Download de gegenereerde afbeelding automatisch
     """
     char_id = prompt_data["character"]
     content_type = prompt_data["type"]
@@ -721,13 +801,18 @@ async def generate_image(page, prompt_data):
         log.info(f"   Generate Image geklikt (via {clicked})")
 
         # Stap 7: Wacht op redirect naar personal-designs (bewijs van succes)
+        action_idx = prompt_data.get("action_index", None)
         try:
             await page.wait_for_url("**/personal-designs**", timeout=60000)
             log.info(f"   ✅ Succesvol gegenereerd: {char_id} — {content_type}")
+            # Stap 8: Auto-download de gegenereerde afbeelding
+            await download_latest_image(page, char_id, content_type, action_idx)
             return True
         except Exception:
             if "personal-designs" in page.url:
                 log.info(f"   ✅ Succesvol gegenereerd: {char_id} — {content_type}")
+                # Stap 8: Auto-download de gegenereerde afbeelding
+                await download_latest_image(page, char_id, content_type, action_idx)
                 return True
             log.warning(f"   ⚠️  Timeout — mogelijk toch gelukt voor {char_id}")
             return False
@@ -1075,6 +1160,7 @@ async def run_batch(command, characters=None):
             log.info(f"\n{'='*55}")
             log.info(f"✅ Klaar: {success}/{total} succesvol gegenereerd")
             log.info(f"📁 Bekijk resultaten: app.artistly.ai/personal-designs")
+            log.info(f"💾 Lokale bestanden: ~/mikkieworld/artistly_output/")
             log.info(f"{'='*55}\n")
 
         finally:
@@ -1126,7 +1212,7 @@ def save_session_interactive():
 # ─── CLI ──────────────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(
-        description="MIKKIE WORLD Artistly AI Content Agent v3.0",
+        description="MIKKIE WORLD Artistly AI Content Agent v4.0",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Commando's:
@@ -1166,7 +1252,7 @@ Voorbeelden:
 
     if cmd == "status":
         state = load_state()
-        print("\n🎨 MIKKIE WORLD Artistly Agent v3.0")
+        print("\n🎨 MIKKIE WORLD Artistly Agent v4.0 (auto-download)")
         print("=" * 50)
         print(f"  Sessie:          {'✅ Aanwezig' if SESSION_FILE.exists() else '❌ Voer save-session uit'}")
         print(f"  Totale afb.:     {state.get('total_images', 0)}")
