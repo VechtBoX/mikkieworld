@@ -28,12 +28,21 @@ Bewezen selectors (live getest in Artistly v6):
 import os, sys, json, asyncio, logging, argparse, datetime, urllib.request
 from pathlib import Path
 
-# ─── Config ───────────────────────────────────────────────────────────────────
+# ─── Config ──────────────────────────────────────────────────────────────────────────────────
 BASE_DIR     = Path.home() / "mikkieworld"
 OUTPUT_DIR   = BASE_DIR / "artistly_output"
 SESSION_FILE = BASE_DIR / "artistly_session.json"
 STATE_FILE   = BASE_DIR / "artistly_state.json"
 LOG_FILE     = BASE_DIR / "artistly_agent.log"
+
+# ─── Telegram Alerts ───────────────────────────────────────────────────────────────────────────
+TELEGRAM_TOKEN   = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
+
+# ─── Debug modus ──────────────────────────────────────────────────────────────────────────────
+# Zet op True voor screenshots en extra logging (alleen bij debuggen)
+# In productie staat dit op False — geen schijfruimte verspillen
+DEBUG_MODE = os.environ.get('MIKKIE_DEBUG', '').lower() in ('1', 'true', 'yes')
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -47,6 +56,50 @@ logging.basicConfig(
     ]
 )
 log = logging.getLogger("artistly")
+
+# ─── Telegram Alert Functie ───────────────────────────────────────────────────────────────────────────────
+def telegram_alert(message: str, level: str = "INFO") -> bool:
+    """
+    Stuur een alert naar Telegram.
+    Werkt alleen als TELEGRAM_BOT_TOKEN en TELEGRAM_CHAT_ID zijn ingesteld.
+    Faalt stil als Telegram niet geconfigureerd is (geen crash).
+    
+    Gebruik:
+      telegram_alert("✅ Run klaar: 63/63 gegenereerd", "SUCCESS")
+      telegram_alert("❌ CRASH: sessie verlopen", "ERROR")
+    """
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        return False  # Stil falen — Telegram niet geconfigureerd
+    
+    emoji = {
+        "SUCCESS": "✅",
+        "ERROR":   "🚨",
+        "WARNING": "⚠️",
+        "INFO":    "ℹ️",
+    }.get(level, "ℹ️")
+    
+    timestamp = datetime.datetime.now().strftime('%d-%m %H:%M')
+    text = f"{emoji} *MIKKIE WORLD Agent*\n`{timestamp}`\n\n{message}"
+    
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = json.dumps({
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": text,
+        "parse_mode": "Markdown"
+    }).encode('utf-8')
+    
+    try:
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return resp.status == 200
+    except Exception as e:
+        log.warning(f"Telegram alert mislukt (niet kritiek): {e}")
+        return False
 
 # ─── MIKKIE WORLD Design DNA ──────────────────────────────────────────────────
 # Dit is de vaste stijl-basis die NOOIT verandert (Paul Ponna's gouden regel)
@@ -578,6 +631,11 @@ async def verify_session(page, context):
 
     if "login" in page.url.lower():
         log.error("❌ Sessie verlopen. Voer uit: mikkie-artistly save-session")
+        telegram_alert(
+            "❌ *Sessie verlopen!*\n\nDe Artistly agent kan niet inloggen.\n"
+            "Voer uit op je Mac:\n`python3 ~/mikkieworld/mikkie_artistly_agent.py save-session`",
+            "ERROR"
+        )
         return False
 
     log.info("✅ Sessie geldig — ingelogd als Hendrik!")
@@ -706,12 +764,13 @@ async def generate_image(page, prompt_data):
 
         await asyncio.sleep(2)
 
-        # DEBUG: screenshot na klik om te zien wat er op het scherm staat
-        try:
-            await page.screenshot(path=os.path.expanduser('~/mikkieworld/debug_after_click.png'))
-            log.info("   📸 Debug screenshot opgeslagen: ~/mikkieworld/debug_after_click.png")
-        except Exception as e:
-            log.warning(f"   Screenshot mislukt: {e}")
+        # DEBUG: screenshot na klik (alleen in debug modus)
+        if DEBUG_MODE:
+            try:
+                await page.screenshot(path=os.path.expanduser('~/mikkieworld/debug_after_click.png'))
+                log.info("   📸 Debug screenshot opgeslagen: ~/mikkieworld/debug_after_click.png")
+            except Exception as e:
+                log.warning(f"   Screenshot mislukt: {e}")
 
         # Stap 3: Wacht op textarea (altijd aanwezig in DOM, ook voor klik)
         # Gebruik state='attached' omdat het element al in DOM staat maar mogelijk niet visible
@@ -1162,6 +1221,21 @@ async def run_batch(command, characters=None):
             log.info(f"📁 Bekijk resultaten: app.artistly.ai/personal-designs")
             log.info(f"💾 Lokale bestanden: ~/mikkieworld/artistly_output/")
             log.info(f"{'='*55}\n")
+            # Telegram: stuur samenvatting na elke run
+            if success == total:
+                telegram_alert(
+                    f"✅ *Run geslaagd!*\n\n"
+                    f"{success}/{total} afbeeldingen gegenereerd en gedownload.\n"
+                    f"Totaal ooit: {state.get('total_images', 0)} afbeeldingen",
+                    "SUCCESS"
+                )
+            else:
+                telegram_alert(
+                    f"⚠️ *Run gedeeltelijk geslaagd*\n\n"
+                    f"{success}/{total} afbeeldingen gegenereerd.\n"
+                    f"{total - success} mislukt — check ~/mikkieworld/artistly_agent.log",
+                    "WARNING"
+                )
 
         finally:
             await browser.close()

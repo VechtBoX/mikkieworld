@@ -35,6 +35,8 @@ TWITTER_SECRET   = os.environ.get('TWITTER_API_SECRET', '')
 TWITTER_TOKEN    = os.environ.get('TWITTER_ACCESS_TOKEN', '')
 TWITTER_TOKEN_S  = os.environ.get('TWITTER_ACCESS_TOKEN_SECRET', '')
 XAI_KEY          = os.environ.get('XAI_API_KEY', '')
+TELEGRAM_TOKEN   = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 
 POLL_INTERVAL    = 300   # 5 minuten
 LOG_FILE         = os.path.expanduser('~/mikkieworld/agent.log')
@@ -136,6 +138,24 @@ logging.basicConfig(
     ]
 )
 log = logging.getLogger(__name__)
+
+# ─── Telegram Alert Functie ───────────────────────────────────────────────────────────────────────────
+def telegram_alert(message: str, level: str = "INFO") -> bool:
+    """Stuur een alert naar Telegram. Faalt stil als niet geconfigureerd."""
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        return False
+    emoji = {"SUCCESS": "✅", "ERROR": "🚨", "WARNING": "⚠️", "INFO": "ℹ️"}.get(level, "ℹ️")
+    timestamp = datetime.datetime.now().strftime('%d-%m %H:%M')
+    text = f"{emoji} *MIKKIE WORLD*\n`{timestamp}`\n\n{message}"
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = json.dumps({"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "Markdown"}).encode('utf-8')
+    try:
+        req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return resp.status == 200
+    except Exception as e:
+        log.warning(f"Telegram alert mislukt (niet kritiek): {e}")
+        return False
 
 # ─── State ────────────────────────────────────────────────────────────────────
 def load_state():
@@ -593,6 +613,19 @@ def run():
                 log.info(f"  {len(new_sales)} nieuwe verkoop/verkopen!")
                 for s in new_sales:
                     process_sale(s, state)
+                # Telegram: alert bij nieuwe verkoop!
+                for s in new_sales:
+                    product = s.get('product_name', 'onbekend product')
+                    price   = s.get('price', 0) / 100
+                    buyer   = s.get('full_name', 'anoniem')
+                    telegram_alert(
+                        f"💰 *Nieuwe verkoop!*\n\n"
+                        f"Product: {product}\n"
+                        f"Bedrag: €{price:.2f}\n"
+                        f"Koper: {buyer}\n"
+                        f"Totaal ooit: €{state['total_revenue']:.2f}",
+                        "SUCCESS"
+                    )
             else:
                 log.info(f"  Geen nieuwe sales. Totaal: {state['total_sales']} | EUR{state['total_revenue']:.2f}")
             last_poll = ts
