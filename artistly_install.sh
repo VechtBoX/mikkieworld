@@ -58,14 +58,24 @@ echo "   Python: $PYTHON"
 echo ""
 echo "🔗 Alias instellen..."
 
-# Verwijder eventuele oude versie
-sed -i '' '/mikkie-artistly/d' ~/.zshrc 2>/dev/null || true
+# Schrijf naar ~/.mikkie_alias.zsh zodat source volgorde niet uitmaakt
+ALIAS_FILE="$HOME/.mikkie_alias.zsh"
 
-# Voeg nieuwe alias toe
-echo "" >> ~/.zshrc
-echo "# MIKKIE WORLD Artistly Agent" >> ~/.zshrc
-echo "alias mikkie-artistly='$PYTHON $HOME/mikkieworld/mikkie_artistly_agent.py'" >> ~/.zshrc
-echo "✅ Alias 'mikkie-artistly' toegevoegd"
+# Verwijder oude mikkie-artistly regels uit zowel .zshrc als alias bestand
+sed -i '' '/mikkie-artistly/d' ~/.zshrc 2>/dev/null || true
+sed -i '' '/mikkie-artistly/d' "$ALIAS_FILE" 2>/dev/null || true
+
+# Voeg toe aan alias bestand (wordt geladen via .zshrc)
+echo "" >> "$ALIAS_FILE"
+echo "# MIKKIE WORLD Artistly Agent" >> "$ALIAS_FILE"
+echo "alias mikkie-artistly='$PYTHON $HOME/mikkieworld/mikkie_artistly_agent.py'" >> "$ALIAS_FILE"
+
+# Zorg dat alias bestand geladen wordt in .zshrc (als dat nog niet het geval is)
+if ! grep -q 'mikkie_alias.zsh' ~/.zshrc 2>/dev/null; then
+    echo "source \$HOME/.mikkie_alias.zsh" >> ~/.zshrc
+fi
+
+echo "✅ Alias 'mikkie-artistly' toegevoegd aan ~/.mikkie_alias.zsh"
 
 # ─── Stap 4: Wachtwoord instellen ─────────────────────────────────────────────
 echo ""

@@ -179,20 +179,28 @@ async def generate_image(page, character_name, content_type, state):
         await asyncio.sleep(3)
 
         # Stap 1: Klik op "Create From Prompt" categorie
+        # Gebruik exacte tekst-match op de div met alleen die tekst
         try:
-            create_btn = page.locator("div").filter(has_text="Create From Prompt").first
-            await create_btn.scroll_into_view_if_needed(timeout=5000)
-            await create_btn.click(timeout=10000)
-            await asyncio.sleep(2)
-            log.info("Categorie 'Create From Prompt' geselecteerd")
+            # Wacht tot de categorie-grid geladen is
+            await page.wait_for_selector("text=Create From Prompt", timeout=15000)
+            # Klik op het element
+            await page.click("text=Create From Prompt", timeout=10000)
+            log.info("Categorie 'Create From Prompt' geklikt")
         except Exception as e:
             log.warning(f"Categorie klik mislukt: {e}")
 
-        # Stap 2: Scroll naar textarea en vul prompt in
+        # Stap 2: Wacht op textarea — eerst attached, dan visible
+        # De textarea verschijnt pas na de klik-animatie (kan 3-8 sec duren)
         try:
             textarea = page.locator("textarea[placeholder='Enter prompt here']")
-            await textarea.scroll_into_view_if_needed(timeout=15000)
-            await asyncio.sleep(1)
+            # Wacht tot het element in de DOM staat (attached)
+            await textarea.wait_for(state="attached", timeout=20000)
+            log.info("Textarea gevonden in DOM")
+            # Scroll het in beeld
+            await textarea.evaluate("el => el.scrollIntoView({behavior: 'smooth', block: 'center'})")
+            await asyncio.sleep(1.5)
+            # Wacht tot zichtbaar
+            await textarea.wait_for(state="visible", timeout=10000)
             await textarea.click()
             await asyncio.sleep(0.3)
             await textarea.fill(prompt)
