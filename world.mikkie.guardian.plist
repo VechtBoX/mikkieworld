@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- MIKKIE WORLD GUARDIAN — automatisch opstarten bij login -->
+    <key>Label</key>
+    <string>world.mikkie.guardian</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/python3</string>
+        <string>/Users/hendrikbroeze/mikkieworld/mikkie_guardian.py</string>
+        <string>loop</string>
+    </array>
+
+    <!-- Automatisch herstarten bij crash -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Opstarten bij login -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Wacht 10 seconden voor herstart na crash -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <!-- Log bestanden -->
+    <key>StandardOutPath</key>
+    <string>/Users/hendrikbroeze/MIKKIE_WORLD/LOGS/guardian_launchd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/hendrikbroeze/MIKKIE_WORLD/LOGS/guardian_launchd_err.log</string>
+
+    <!-- Omgevingsvariabelen laden vanuit .zshrc -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/hendrikbroeze</string>
+    </dict>
+</dict>
+</plist>
