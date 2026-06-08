@@ -170,62 +170,77 @@ async def generate_image(page, character_name, content_type, state):
     log.info(f"Genereren: {description}")
 
     try:
-        # Navigate to image designer
-        await page.goto("https://app.artistly.ai/ai/image-designer-v6", wait_until="networkidle")
-        await asyncio.sleep(2)
-
-        # Select category if not "Create From Prompt"
-        category = ctype["category"]
-        if category != "Create From Prompt":
-            # Click the category button
-            cat_buttons = await page.query_selector_all("div.cursor-pointer, div[class*='cursor']")
-            for btn in cat_buttons:
-                text = await btn.inner_text()
-                if category.lower() in text.lower():
-                    await btn.click()
-                    await asyncio.sleep(1)
-                    break
-
-        # Enter prompt
-        textarea = await page.query_selector("textarea[placeholder='Enter prompt here']")
-        if not textarea:
-            log.error("Prompt textarea niet gevonden")
-            return None
-
-        await textarea.fill(prompt)
-        await asyncio.sleep(0.5)
-
-        # Select aspect ratio
-        aspect_select = await page.query_selector("select")
-        if aspect_select:
-            await aspect_select.select_option(label=ctype["aspect"])
-            await asyncio.sleep(0.5)
-
-        # Select folder "Mikkie"
-        folder_selects = await page.query_selector_all("select")
-        for sel in folder_selects:
-            options = await sel.query_selector_all("option")
-            for opt in options:
-                val = await opt.inner_text()
-                if "Mikkie" in val:
-                    await sel.select_option(label="Mikkie")
-                    break
-
-        # Click Generate
-        gen_btn = await page.query_selector("#generate_image_flux, button:has-text('Generate Image')")
-        if not gen_btn:
-            log.error("Generate knop niet gevonden")
-            return None
-
-        await gen_btn.click()
-        log.info(f"Generatie gestart voor {description}...")
-
-        # Wait for redirect to personal-designs
+        # Navigeer naar image designer
         try:
-            await page.wait_for_url("**/personal-designs**", timeout=30000)
-            log.info(f"Generatie succesvol gestart: {description}")
-        except:
-            log.warning("Geen redirect naar personal-designs — mogelijk al daar")
+            await page.goto("https://app.artistly.ai/ai/image-designer-v6",
+                            wait_until="domcontentloaded", timeout=60000)
+        except Exception:
+            pass
+        await asyncio.sleep(3)
+
+        # Stap 1: Klik op "Create From Prompt" categorie
+        try:
+            create_btn = page.locator("text=Create From Prompt").first
+            await create_btn.click(timeout=10000)
+            await asyncio.sleep(2)
+            log.info("Categorie 'Create From Prompt' geselecteerd")
+        except Exception as e:
+            log.warning(f"Categorie klik mislukt (mogelijk al geselecteerd): {e}")
+
+        # Stap 2: Vul de prompt in
+        try:
+            textarea = page.locator("textarea[placeholder='Enter prompt here']")
+            await textarea.wait_for(timeout=15000)
+            await textarea.fill(prompt)
+            await asyncio.sleep(1)
+            log.info(f"Prompt ingevuld ({len(prompt)} tekens)")
+        except Exception as e:
+            log.error(f"Prompt textarea niet gevonden: {e}")
+            return None
+
+        # Stap 3: Selecteer aspect ratio
+        try:
+            aspect_map = {
+                "1:1": "1:1 (1024 X 1024) px",
+                "16:9": "16:9 (1344 X 768) px",
+                "9:16": "9:16 (768 X 1344) px",
+                "4:5": "4:5 (896 X 1088) px",
+            }
+            aspect_label = aspect_map.get(ctype.get("aspect", "1:1"), "1:1 (1024 X 1024) px")
+            aspect_select = page.locator("select").first
+            await aspect_select.select_option(label=aspect_label)
+            await asyncio.sleep(0.5)
+        except Exception as e:
+            log.warning(f"Aspect ratio selectie mislukt: {e}")
+
+        # Stap 4: Selecteer folder "Mikkie"
+        try:
+            folder_selects = page.locator("select")
+            count = await folder_selects.count()
+            for i in range(count):
+                sel = folder_selects.nth(i)
+                options_text = await sel.inner_text()
+                if "Mikkie" in options_text:
+                    await sel.select_option(label="Mikkie")
+                    log.info("Folder 'Mikkie' geselecteerd")
+                    break
+        except Exception as e:
+            log.warning(f"Folder selectie mislukt: {e}")
+
+        # Stap 5: Klik Generate Image
+        try:
+            gen_btn = page.locator("#generate_image_flux")
+            if not await gen_btn.count():
+                gen_btn = page.locator("button:has-text('Generate Image')")
+            await gen_btn.click(timeout=15000)
+            log.info(f"Generate Image geklikt voor {description}")
+        except Exception as e:
+            log.error(f"Generate knop niet gevonden: {e}")
+            return None
+
+        # Wacht op verwerking
+        await asyncio.sleep(30)
+        log.info(f"Generatie succesvol: {description}")
 
         # Update state
         state["generated"].append({
@@ -237,9 +252,7 @@ async def generate_image(page, character_name, content_type, state):
         state["total_images"] += 1
         save_state(state)
 
-        # Wait between generations to avoid rate limiting
-        await asyncio.sleep(10)
-
+        await asyncio.sleep(5)
         return True
 
     except Exception as e:
@@ -251,8 +264,12 @@ async def download_latest_images(page, output_dir, limit=10):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     log.info(f"Laatste {limit} afbeeldingen downloaden...")
-    await page.goto("https://app.artistly.ai/personal-designs", wait_until="networkidle")
-    await asyncio.sleep(3)
+    try:
+        await page.goto("https://app.artistly.ai/personal-designs",
+                        wait_until="domcontentloaded", timeout=60000)
+    except Exception:
+        pass
+    await asyncio.sleep(4)
 
     # Find all download buttons
     download_btns = await page.query_selector_all("button:has-text('Download Image')")
