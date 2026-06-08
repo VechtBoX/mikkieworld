@@ -612,34 +612,15 @@ async def generate_image(page, prompt_data):
             pass
         await asyncio.sleep(2)
 
-        # Stap 2: Klik Create From Prompt via scroll + dispatchEvent
+        # Stap 2: Klik Create From Prompt via Playwright native click (force=True omzeilt overlays)
         try:
             await page.wait_for_selector(".group.cursor-pointer", timeout=10000)
-            # Scroll naar de categorie card en klik via dispatchEvent (werkt ook in headless)
-            clicked_cat = await page.evaluate("""
-                () => {
-                    const divs = document.querySelectorAll('.group.cursor-pointer');
-                    for (const d of divs) {
-                        if (d.textContent.includes('Create From Prompt')) {
-                            d.scrollIntoView({behavior: 'instant', block: 'center'});
-                            // Gebruik MouseEvent dispatch voor headless compatibility
-                            const evt = new MouseEvent('click', {
-                                bubbles: true,
-                                cancelable: true,
-                                view: window
-                            });
-                            d.dispatchEvent(evt);
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-            """)
-            await asyncio.sleep(1)
-            if clicked_cat:
-                log.info("   Categorie 'Create From Prompt' geklikt via dispatchEvent")
-            else:
-                log.warning("   Categorie klik mislukt")
+            # Gebruik Playwright's eigen locator met force=True — werkt gegarandeerd in headless
+            locator = page.locator(".group.cursor-pointer").filter(has_text="Create From Prompt").first
+            await locator.scroll_into_view_if_needed(timeout=5000)
+            await asyncio.sleep(0.5)
+            await locator.click(force=True, timeout=5000)
+            log.info("   Categorie 'Create From Prompt' geklikt via Playwright locator")
         except Exception as e:
             log.warning(f"   Categorie klik mislukt: {e}")
 
