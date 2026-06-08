@@ -180,29 +180,21 @@ async def generate_image(page, character_name, content_type, state):
 
         # Stap 1: Klik op "Create From Prompt" categorie
         try:
-            create_btn = page.locator("text=Create From Prompt").first
+            create_btn = page.locator("div").filter(has_text="Create From Prompt").first
+            await create_btn.scroll_into_view_if_needed(timeout=5000)
             await create_btn.click(timeout=10000)
-            await asyncio.sleep(3)  # Wacht op animatie
+            await asyncio.sleep(2)
             log.info("Categorie 'Create From Prompt' geselecteerd")
         except Exception as e:
-            log.warning(f"Categorie klik mislukt (mogelijk al geselecteerd): {e}")
+            log.warning(f"Categorie klik mislukt: {e}")
 
-        # Scroll naar beneden zodat de textarea zichtbaar wordt
-        await page.evaluate("window.scrollTo(0, 600)")
-        await asyncio.sleep(1)
-
-        # Stap 2: Vul de prompt in
+        # Stap 2: Scroll naar textarea en vul prompt in
         try:
-            # Probeer meerdere selectors
             textarea = page.locator("textarea[placeholder='Enter prompt here']")
-            try:
-                await textarea.wait_for(state="visible", timeout=20000)
-            except Exception:
-                # Fallback: probeer gewoon textarea
-                textarea = page.locator("textarea").first
-                await textarea.wait_for(state="visible", timeout=10000)
+            await textarea.scroll_into_view_if_needed(timeout=15000)
+            await asyncio.sleep(1)
             await textarea.click()
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.3)
             await textarea.fill(prompt)
             await asyncio.sleep(1)
             log.info(f"Prompt ingevuld ({len(prompt)} tekens)")
@@ -210,40 +202,30 @@ async def generate_image(page, character_name, content_type, state):
             log.error(f"Prompt textarea niet gevonden: {e}")
             return None
 
-        # Stap 3: Selecteer aspect ratio
+        # Stap 3: Selecteer folder "Mikkie" via de select dropdown
         try:
-            aspect_map = {
-                "1:1": "1:1 (1024 X 1024) px",
-                "16:9": "16:9 (1344 X 768) px",
-                "9:16": "9:16 (768 X 1344) px",
-                "4:5": "4:5 (896 X 1088) px",
-            }
-            aspect_label = aspect_map.get(ctype.get("aspect", "1:1"), "1:1 (1024 X 1024) px")
-            aspect_select = page.locator("select").first
-            await aspect_select.select_option(label=aspect_label)
-            await asyncio.sleep(0.5)
-        except Exception as e:
-            log.warning(f"Aspect ratio selectie mislukt: {e}")
-
-        # Stap 4: Selecteer folder "Mikkie"
-        try:
-            folder_selects = page.locator("select")
-            count = await folder_selects.count()
-            for i in range(count):
-                sel = folder_selects.nth(i)
-                options_text = await sel.inner_text()
-                if "Mikkie" in options_text:
-                    await sel.select_option(label="Mikkie")
-                    log.info("Folder 'Mikkie' geselecteerd")
-                    break
+            folder_select = page.locator("select").filter(has_text="Mikkie")
+            if await folder_select.count():
+                await folder_select.select_option(label="Mikkie")
+                log.info("Folder 'Mikkie' geselecteerd")
+            else:
+                # Fallback: eerste select met Mikkie optie
+                selects = page.locator("select")
+                n = await selects.count()
+                for i in range(n):
+                    txt = await selects.nth(i).inner_text()
+                    if "Mikkie" in txt:
+                        await selects.nth(i).select_option(label="Mikkie")
+                        log.info("Folder 'Mikkie' geselecteerd (fallback)")
+                        break
         except Exception as e:
             log.warning(f"Folder selectie mislukt: {e}")
 
-        # Stap 5: Klik Generate Image
+        # Stap 4: Scroll naar Generate Image knop en klik
         try:
-            gen_btn = page.locator("#generate_image_flux")
-            if not await gen_btn.count():
-                gen_btn = page.locator("button:has-text('Generate Image')")
+            gen_btn = page.locator("button", has_text="Generate Image")
+            await gen_btn.scroll_into_view_if_needed(timeout=10000)
+            await asyncio.sleep(0.5)
             await gen_btn.click(timeout=15000)
             log.info(f"Generate Image geklikt voor {description}")
         except Exception as e:
