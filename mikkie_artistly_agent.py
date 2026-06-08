@@ -622,8 +622,7 @@ async def generate_image(page, prompt_data):
 
         await asyncio.sleep(2)
 
-        # Stap 3: Scroll naar textarea (staat op ~500px)
-        await page.evaluate("window.scrollTo(0, 500)")
+        # Stap 3: Wacht kort zodat de textarea in de DOM staat
         await asyncio.sleep(1)
 
         # Stap 4: Vul textarea via JS (React-compatible native value setter)
@@ -647,6 +646,10 @@ async def generate_image(page, prompt_data):
             return False
 
         log.info(f"   Prompt ingevuld ({len(prompt)} tekens)")
+        await asyncio.sleep(1)
+
+        # Scroll naar beneden zodat Generate knop zichtbaar wordt
+        await page.evaluate("window.scrollTo(0, 800)")
         await asyncio.sleep(1)
 
         # Stap 5: Selecteer folder "Mikkie"
