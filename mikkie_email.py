@@ -13,7 +13,8 @@ def req(method, endpoint, data=None):
     r = urllib.request.Request(url, data=body, headers=headers, method=method)
     try:
         with urllib.request.urlopen(r) as resp:
-            return json.loads(resp.read().decode())
+            raw = resp.read().decode().strip()
+            return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
         print(f"Error {e.code}: {e.read().decode()}")
         sys.exit(1)
@@ -52,10 +53,34 @@ elif cmd == 'lists':
     for l in d.get('lists', []):
         print(f"{l['id']:<15} {l['name']:<30} {l['stats']['member_count']:>6}")
 
+elif cmd == 'campaigns':
+    d = req('GET', '/campaigns?count=10&sort_field=create_time&sort_dir=DESC')
+    print(f"{'ID':<15} {'Status':<10} {'Titel':<35}")
+    print('-' * 65)
+    for c in d.get('campaigns', []):
+        print(f"{c['id']:<15} {c['status']:<10} {c['settings'].get('title',''):<35}")
+
+elif cmd == 'send-draft':
+    if len(sys.argv) < 3:
+        print("Gebruik: mikkie-email send-draft <campaign_id>")
+        sys.exit(1)
+    cid = sys.argv[2]
+    req('POST', f'/campaigns/{cid}/actions/send')
+    print(f"Verstuurd: {cid}")
+
 elif cmd == 'send':
     subject = sys.argv[2] if len(sys.argv) > 2 else 'MIKKIE WORLD Nieuws'
     preview = sys.argv[3] if len(sys.argv) > 3 else 'Avontuur wacht!'
-    body = sys.stdin.read().strip() if not sys.stdin.isatty() else '<p>Welkom bij MIKKIE WORLD!</p>'
+
+    # Body: 4th arg as file path, or stdin, or default
+    if len(sys.argv) > 4 and os.path.isfile(sys.argv[4]):
+        with open(sys.argv[4], 'r') as f:
+            body = f.read().strip()
+    elif not sys.stdin.isatty():
+        body = sys.stdin.read().strip()
+    else:
+        body = '<p>Welkom bij MIKKIE WORLD! Ga mee op avontuur.</p>'
+
     html = html_template(subject, body)
     c = req('POST', '/campaigns', {
         'type': 'regular',
@@ -69,16 +94,28 @@ elif cmd == 'send':
     cid = c['id']
     req('PUT', f'/campaigns/{cid}/content', {'html': html})
     print(f"Campaign aangemaakt: {cid}")
-    confirm = input("Versturen? (y/n): ")
+
+    # Always read confirmation from /dev/tty, not stdin
+    try:
+        with open('/dev/tty', 'r') as tty:
+            sys.stdout.write("Versturen? (y/n): ")
+            sys.stdout.flush()
+            confirm = tty.readline().strip()
+    except Exception:
+        confirm = 'n'
+
     if confirm.lower() == 'y':
         req('POST', f'/campaigns/{cid}/actions/send')
-        print("Verstuurd!")
+        print(f"Verstuurd! {cid}")
     else:
-        print(f"Draft: {cid}")
+        print(f"Draft opgeslagen: {cid}")
+        print(f"Stuur later met: mikkie-email send-draft {cid}")
 
 else:
-    print("MIKKIE WORLD Mailchimp CLI")
+    print("MIKKIE WORLD Mailchimp CLI v2")
     print("  mikkie-email test")
     print("  mikkie-email lists")
-    print('  mikkie-email send "subject" "preview"')
-    print('  echo "<p>body</p>" | mikkie-email send "subject" "preview"')
+    print("  mikkie-email campaigns")
+    print("  mikkie-email send subject preview")
+    print("  mikkie-email send subject preview ~/body.html")
+    print("  mikkie-email send-draft <campaign_id>")
