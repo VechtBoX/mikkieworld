@@ -637,13 +637,19 @@ async def generate_image(page, prompt_data):
 
         await asyncio.sleep(2)
 
-        # Stap 3: Wacht op #text-to-image-stage-2 container (bevat textarea)
+        # Stap 3: Wacht op textarea (altijd aanwezig in DOM, ook voor klik)
+        # Gebruik state='attached' omdat het element al in DOM staat maar mogelijk niet visible
         try:
-            await page.wait_for_selector('#text-to-image-stage-2', timeout=10000)
-            log.info("   Stage 2 geladen")
+            await page.wait_for_selector(
+                'textarea[placeholder="Enter prompt here"]',
+                state='attached',
+                timeout=10000
+            )
+            log.info("   Textarea gevonden")
         except Exception:
-            log.error(f"   ❌ Stage 2 niet gevonden voor {char_id}")
-            return False
+            # Fallback: wacht gewoon 3 seconden en ga door
+            log.warning("   Textarea wait timeout — ga toch door")
+            await asyncio.sleep(3)
 
         # Stap 4: Vul textarea via JS (React-compatible native value setter)
         filled = await page.evaluate("""
