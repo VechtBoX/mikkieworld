@@ -1,1 +1,6 @@
 __pycache__/
+*.pyc
+agent.log
+agent_error.log
+agent_state.json
+agent_content.json
