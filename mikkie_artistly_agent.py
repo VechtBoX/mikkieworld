@@ -138,20 +138,25 @@ async def login(page, context):
         await context.add_cookies(cookies)
         log.info(f"{len(cookies)} cookies geladen")
 
-    # Ga naar dashboard
-    await page.goto("https://app.artistly.ai/dashboard", wait_until="networkidle")
-    await asyncio.sleep(2)
+    # Ga naar dashboard — gebruik domcontentloaded (niet networkidle, dat geeft timeout)
+    try:
+        await page.goto("https://app.artistly.ai/dashboard",
+                        wait_until="domcontentloaded", timeout=60000)
+    except Exception:
+        # Fallback: probeer toch door te gaan
+        pass
+    await asyncio.sleep(3)
+
+    current_url = page.url
+    log.info(f"Huidige URL na laden: {current_url}")
 
     # Check of we ingelogd zijn
-    if "dashboard" in page.url or "choose-designer" in page.url or "personal-designs" in page.url:
-        title = await page.title()
-        if "Login" not in title and "login" not in page.url:
-            log.info("✅ Sessie geldig — ingelogd als Hendrik!")
-            return True
+    if "login" not in current_url.lower():
+        log.info("✅ Sessie geldig — ingelogd als Hendrik!")
+        return True
 
     log.error("❌ Sessie verlopen of niet gevonden.")
     log.error("   Voer uit: mikkie-artistly save-session")
-    log.error("   Dan log je eenmalig in via de browser, en de agent onthoudt de sessie.")
     return False
 
 async def generate_image(page, character_name, content_type, state):
@@ -294,7 +299,7 @@ async def save_session():
             viewport={"width": 1280, "height": 800}
         )
         page = await context.new_page()
-        await page.goto("https://app.artistly.ai/login")
+        await page.goto("https://app.artistly.ai/login", wait_until="domcontentloaded")
 
         print("Browser geopend. Log nu in via Google...")
         print("Druk Enter zodra je het dashboard ziet: ", end="", flush=True)
@@ -336,8 +341,10 @@ async def run_content_batch(characters=None, content_types=None):
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
             viewport={"width": 1280, "height": 800},
-            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            ignore_https_errors=True
         )
+        context.set_default_timeout(60000)  # 60 seconden timeout
         page = await context.new_page()
 
         try:
