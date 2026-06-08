@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """
-🛡️ MIKKIE WORLD — GUARDIAN Watchdog v1.0
+🛡️ MIKKIE WORLD — GUARDIAN Watchdog v2.0
 ==========================================
 Bewaakt alle MIKKIE WORLD daemons en herstart ze automatisch bij crashes.
 Stuurt Telegram alert bij elke crash en herstart.
+Bewaakt nu 15+ agents inclusief Pinterest, Suno, TikTok, Niche en Gumroad Bundle.
 
 Gebruik:
   python3 mikkie_guardian.py start   → Start GUARDIAN daemon
   python3 mikkie_guardian.py stop    → Stop GUARDIAN daemon
   python3 mikkie_guardian.py status  → Toon status van alle bewuste processen
+  python3 mikkie_guardian.py health  → Uitgebreide health check alle agents
+  python3 mikkie_guardian.py list    → Toon alle geregistreerde agents
 """
 
 import os
@@ -91,6 +94,44 @@ DAEMONS = [
         ["python3", str(BASE_DIR / "mikkie_artistly_agent.py"), "daemon"],
         2
     ),
+    (
+        "TELEGRAM_COMMANDER",
+        BASE_DIR / "pids" / "telegram_commander.pid",
+        ["python3", str(BASE_DIR / "mikkie_telegram_commander.py")],
+        3
+    ),
+    (
+        "INSTAGRAM",
+        BASE_DIR / "pids" / "instagram.pid",
+        ["python3", str(BASE_DIR / "mikkie_instagram.py"), "daemon"],
+        2
+    ),
+]
+
+# ─── Alle agent bestanden (voor health check) ─────────────────────────────────
+ALL_AGENTS = [
+    {"name": "BRAIN",              "file": "mikkie_brain.py",             "daemon": True},
+    {"name": "MAIN",               "file": "mikkie_agent.py",             "daemon": True},
+    {"name": "ARTISTLY",           "file": "mikkie_artistly_agent.py",    "daemon": True},
+    {"name": "TELEGRAM_COMMANDER", "file": "mikkie_telegram_commander.py","daemon": True},
+    {"name": "INSTAGRAM",          "file": "mikkie_instagram.py",         "daemon": True},
+    {"name": "GUARDIAN",           "file": "mikkie_guardian.py",          "daemon": True},
+    {"name": "HEART",              "file": "mikkie_heart.py",             "daemon": False},
+    {"name": "ANALYTICS",          "file": "mikkie_analytics.py",         "daemon": False},
+    {"name": "BACKUP",             "file": "mikkie_backup.py",            "daemon": False},
+    {"name": "REPURPOSE",          "file": "mikkie_repurpose.py",         "daemon": False},
+    {"name": "POST_DRAFT",         "file": "mikkie_post_draft.py",        "daemon": False},
+    {"name": "ASSET_PROMPT",       "file": "mikkie_asset_prompt.py",      "daemon": False},
+    {"name": "ENGAGEMENT_LOGGER",  "file": "mikkie_engagement_logger.py", "daemon": False},
+    {"name": "PINTEREST",          "file": "mikkie_pinterest.py",         "daemon": False},
+    {"name": "SUNO",               "file": "mikkie_suno.py",              "daemon": False},
+    {"name": "TIKTOK",             "file": "mikkie_tiktok.py",            "daemon": False},
+    {"name": "NICHE",              "file": "mikkie_niche.py",             "daemon": False},
+    {"name": "GUMROAD_BUNDLE",     "file": "mikkie_gumroad_bundle.py",    "daemon": False},
+    {"name": "TWEET",              "file": "mikkie_tweet.py",             "daemon": False},
+    {"name": "GUMROAD",            "file": "mikkie_gumroad.py",           "daemon": False},
+    {"name": "DASHBOARD",          "file": "mikkie_dashboard.py",         "daemon": False},
+    {"name": "CLI",                "file": "mikkie_cli.py",               "daemon": False},
 ]
 
 # ─── Crash tracking ───────────────────────────────────────────────────────────
@@ -259,15 +300,69 @@ def status():
 # Fix missing Optional import
 from typing import Optional
 
+def health():
+    """Uitgebreide health check van alle 21 agents."""
+    now = datetime.now()
+    print(f"\n{BOLD}{'═'*70}{RESET}")
+    print(f"  🛡️  MIKKIE GUARDIAN — HEALTH CHECK — {now.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"  {len(ALL_AGENTS)} agents geregistreerd")
+    print(f"{'═'*70}{RESET}\n")
+    
+    ok_count = 0
+    missing_count = 0
+    
+    for agent in ALL_AGENTS:
+        agent_file = BASE_DIR / agent["file"]
+        exists = agent_file.exists()
+        size = agent_file.stat().st_size if exists else 0
+        daemon_label = "[DAEMON]" if agent["daemon"] else "[CLI]   "
+        
+        if exists:
+            status_str = c(f"✅ OK ({size:,} bytes)", GREEN)
+            ok_count += 1
+        else:
+            status_str = c("❌ ONTBREEKT", RED)
+            missing_count += 1
+        
+        print(f"  {daemon_label} {agent['name']:<20} {status_str}")
+    
+    print(f"\n  {c(f'✅ {ok_count} agents aanwezig', GREEN)}")
+    if missing_count > 0:
+        print(f"  {c(f'❌ {missing_count} agents ontbreken', RED)}")
+    print(f"{'═'*70}\n")
+    
+    # Stuur health report via Telegram
+    telegram(f"🛡️ <b>GUARDIAN Health Check</b>\n✅ {ok_count}/{len(ALL_AGENTS)} agents aanwezig\n{'❌ ' + str(missing_count) + ' ontbreken!' if missing_count > 0 else '🟢 Alles in orde!'}")
+
+def list_agents():
+    """Toon alle geregistreerde agents."""
+    print(f"\n{BOLD}🛡️  MIKKIE WORLD — Alle {len(ALL_AGENTS)} Agents{RESET}\n")
+    
+    daemons = [a for a in ALL_AGENTS if a["daemon"]]
+    cli_agents = [a for a in ALL_AGENTS if not a["daemon"]]
+    
+    print(f"  {c('DAEMONS (altijd actief):', YELLOW)}")
+    for a in daemons:
+        print(f"    🔄 {a['name']:<20} {a['file']}")
+    
+    print(f"\n  {c('CLI AGENTS (op aanvraag):', CYAN)}")
+    for a in cli_agents:
+        print(f"    ⚡ {a['name']:<20} {a['file']}")
+    
+    print(f"\n  {c(f'Totaal: {len(ALL_AGENTS)} agents', GREEN)}\n")
+
 # ─── Main ─────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     args = sys.argv[1:]
-
     if not args or args[0] == "status":
         status()
     elif args[0] == "start":
         start()
     elif args[0] == "stop":
         stop()
+    elif args[0] == "health":
+        health()
+    elif args[0] == "list":
+        list_agents()
     else:
-        print("Gebruik: python3 mikkie_guardian.py [start|stop|status]")
+        print("Gebruik: python3 mikkie_guardian.py [start|stop|status|health|list]")
