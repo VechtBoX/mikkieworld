@@ -174,6 +174,51 @@ WEEKSCHEMA = {
         (10, 0, "zondag_rapport",    ["python3", str(BASE_DIR/"mikkie_engagement_logger.py"), "weekly"],
                "Zondag: weekrapport via Telegram"),
     ],
+    # Nieuwe agents — wekelijks schema
+    0: [  # Maandag (uitgebreid)
+        (13, 0,  "maandag_covers",        ["python3", str(BASE_DIR/"mikkie_artistly_agent.py"), "covers"],
+                "Maandag: covers genereren voor alle 7 karakters"),
+        (14, 0,  "maandag_pinterest",     ["python3", str(BASE_DIR/"mikkie_pinterest.py"), "batch"],
+                "Maandag: Pinterest batch — alle afbeeldingen pinnen"),
+        (15, 0,  "maandag_suno",          ["python3", str(BASE_DIR/"mikkie_suno.py"), "weekly"],
+                "Maandag: Suno muziek-prompts voor de hele week"),
+        (16, 0,  "maandag_tiktok_week",   ["python3", str(BASE_DIR/"mikkie_tiktok.py"), "weekly"],
+                "Maandag: TikTok weekplanning genereren"),
+        (20, 0,  "maandag_niche",         ["python3", str(BASE_DIR/"mikkie_niche.py"), "analyze"],
+                "Maandag: Niche analyse — nieuwe Gumroad kansen"),
+    ],
+    2: [  # Woensdag
+        (13, 0,  "woensdag_coloring",     ["python3", str(BASE_DIR/"mikkie_artistly_agent.py"), "coloring"],
+                "Woensdag: kleurplaten genereren"),
+        (14, 0,  "woensdag_pinterest",    ["python3", str(BASE_DIR/"mikkie_pinterest.py"), "pin"],
+                "Woensdag: Pinterest pin van nieuwste afbeelding"),
+        (15, 0,  "woensdag_tiktok",       ["python3", str(BASE_DIR/"mikkie_tiktok.py"), "caption"],
+                "Woensdag: TikTok caption genereren"),
+    ],
+    4: [  # Vrijdag
+        (13, 0,  "vrijdag_banners",       ["python3", str(BASE_DIR/"mikkie_artistly_agent.py"), "banners"],
+                "Vrijdag: banners genereren"),
+        (14, 0,  "vrijdag_gumroad",       ["python3", str(BASE_DIR/"mikkie_gumroad_bundle.py"), "status"],
+                "Vrijdag: Gumroad status check"),
+        (15, 0,  "vrijdag_niche_kw",      ["python3", str(BASE_DIR/"mikkie_niche.py"), "keywords"],
+                "Vrijdag: SEO keywords updaten"),
+    ],
+    5: [  # Zaterdag
+        (11, 0,  "zaterdag_bundle",       ["python3", str(BASE_DIR/"mikkie_gumroad_bundle.py"), "bundle"],
+                "Zaterdag: Gumroad bundle updaten"),
+        (12, 0,  "zaterdag_suno",         ["python3", str(BASE_DIR/"mikkie_suno.py"), "prompt"],
+                "Zaterdag: Suno muziek prompt genereren"),
+        (14, 0,  "zaterdag_tiktok",       ["python3", str(BASE_DIR/"mikkie_tiktok.py"), "hashtags"],
+                "Zaterdag: TikTok hashtag strategie updaten"),
+    ],
+    6: [  # Zondag (uitgebreid)
+        (10, 0,  "zondag_rapport",        ["python3", str(BASE_DIR/"mikkie_engagement_logger.py"), "weekly"],
+                "Zondag: weekrapport via Telegram"),
+        (11, 0,  "zondag_roadmap",        ["python3", str(BASE_DIR/"mikkie_niche.py"), "roadmap"],
+                "Zondag: product roadmap updaten"),
+        (12, 0,  "zondag_covers_upload",  ["python3", str(BASE_DIR/"mikkie_gumroad_bundle.py"), "upload-covers"],
+                "Zondag: Gumroad covers uploaden"),
+    ],
 }
 
 # ─── State management ─────────────────────────────────────────────────────────
