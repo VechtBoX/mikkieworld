@@ -179,66 +179,84 @@ async def generate_image(page, character_name, content_type, state):
         await asyncio.sleep(3)
 
         # Stap 1: Klik op "Create From Prompt" categorie
-        # Gebruik exacte tekst-match op de div met alleen die tekst
+        # De pagina laadt met een categorie-grid. De eerste card is "Create From Prompt".
+        # Na klikken scrollt de pagina automatisch naar beneden (textarea staat op y~500)
         try:
-            # Wacht tot de categorie-grid geladen is
             await page.wait_for_selector("text=Create From Prompt", timeout=15000)
-            # Klik op het element
             await page.click("text=Create From Prompt", timeout=10000)
             log.info("Categorie 'Create From Prompt' geklikt")
         except Exception as e:
             log.warning(f"Categorie klik mislukt: {e}")
 
-        # Stap 2: Wacht op textarea — eerst attached, dan visible
-        # De textarea verschijnt pas na de klik-animatie (kan 3-8 sec duren)
+        # Stap 2: Scroll naar beneden zodat textarea in viewport komt
+        # De textarea staat op ~500px van de bovenkant van de pagina
+        await asyncio.sleep(2)
+        await page.evaluate("window.scrollTo(0, 500)")
+        await asyncio.sleep(1)
+        log.info("Pagina gescrold naar y=500")
+
+        # Stap 3: Vul de textarea in via JavaScript (omzeilt visibility checks)
         try:
-            textarea = page.locator("textarea[placeholder='Enter prompt here']")
-            # Wacht tot het element in de DOM staat (attached)
-            await textarea.wait_for(state="attached", timeout=20000)
-            log.info("Textarea gevonden in DOM")
-            # Scroll het in beeld
-            await textarea.evaluate("el => el.scrollIntoView({behavior: 'smooth', block: 'center'})")
-            await asyncio.sleep(1.5)
-            # Wacht tot zichtbaar
-            await textarea.wait_for(state="visible", timeout=10000)
-            await textarea.click()
-            await asyncio.sleep(0.3)
-            await textarea.fill(prompt)
-            await asyncio.sleep(1)
-            log.info(f"Prompt ingevuld ({len(prompt)} tekens)")
+            # Gebruik evaluate om direct de textarea waarde in te stellen
+            filled = await page.evaluate("""
+                (prompt) => {
+                    const ta = document.querySelector('textarea[placeholder="Enter prompt here"]');
+                    if (!ta) return false;
+                    // React-compatible value setter
+                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+                    nativeInputValueSetter.call(ta, prompt);
+                    ta.dispatchEvent(new Event('input', { bubbles: true }));
+                    ta.dispatchEvent(new Event('change', { bubbles: true }));
+                    ta.focus();
+                    return true;
+                }
+            """, prompt)
+            if filled:
+                log.info(f"Prompt ingevuld via JS ({len(prompt)} tekens)")
+            else:
+                log.error("Textarea niet gevonden via JS")
+                return None
         except Exception as e:
-            log.error(f"Prompt textarea niet gevonden: {e}")
+            log.error(f"JS prompt invullen mislukt: {e}")
             return None
 
-        # Stap 3: Selecteer folder "Mikkie" via de select dropdown
+        await asyncio.sleep(1)
+
+        # Stap 4: Selecteer folder "Mikkie" via de select dropdown (index 3 = folder select)
         try:
-            folder_select = page.locator("select").filter(has_text="Mikkie")
-            if await folder_select.count():
-                await folder_select.select_option(label="Mikkie")
-                log.info("Folder 'Mikkie' geselecteerd")
-            else:
-                # Fallback: eerste select met Mikkie optie
-                selects = page.locator("select")
-                n = await selects.count()
-                for i in range(n):
-                    txt = await selects.nth(i).inner_text()
-                    if "Mikkie" in txt:
-                        await selects.nth(i).select_option(label="Mikkie")
-                        log.info("Folder 'Mikkie' geselecteerd (fallback)")
-                        break
+            # Er zijn 3 selects: aspect ratio, folder, visibility, quantity
+            # Folder select heeft optie "Mikkie"
+            folder_filled = await page.evaluate("""
+                () => {
+                    const selects = document.querySelectorAll('select');
+                    for (const sel of selects) {
+                        const opts = Array.from(sel.options).map(o => o.text);
+                        if (opts.includes('Mikkie')) {
+                            sel.value = Array.from(sel.options).find(o => o.text === 'Mikkie').value;
+                            sel.dispatchEvent(new Event('change', { bubbles: true }));
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            """)
+            if folder_filled:
+                log.info("Folder 'Mikkie' geselecteerd via JS")
         except Exception as e:
             log.warning(f"Folder selectie mislukt: {e}")
 
-        # Stap 4: Scroll naar Generate Image knop en klik
+        # Stap 5: Klik Generate Image knop via ID
         try:
-            gen_btn = page.locator("button", has_text="Generate Image")
-            await gen_btn.scroll_into_view_if_needed(timeout=10000)
-            await asyncio.sleep(0.5)
-            await gen_btn.click(timeout=15000)
+            await page.click("#generate_image_flux", timeout=10000)
             log.info(f"Generate Image geklikt voor {description}")
         except Exception as e:
-            log.error(f"Generate knop niet gevonden: {e}")
-            return None
+            # Fallback: klik via button tekst
+            try:
+                await page.click("button:has-text('Generate Image')", timeout=10000)
+                log.info(f"Generate Image geklikt (fallback) voor {description}")
+            except Exception as e2:
+                log.error(f"Generate knop niet gevonden: {e2}")
+                return None
 
         # Wacht op verwerking
         await asyncio.sleep(30)
