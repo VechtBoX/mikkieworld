@@ -131,9 +131,29 @@ DAGSCHEMA = [
     (22, 30, "nacht_stickers",    ["python3", str(BASE_DIR/"mikkie_artistly_agent.py"), "stickers"],
              "Nacht Artistly stickers genereren"),
 
+    # Repurpose — 1 post → 7 platforms
+    (9,  0,  "repurpose_ochtend",  ["python3", str(BASE_DIR/"mikkie_repurpose.py"), "latest"],
+             "Ochtend post repurposen naar 7 platforms"),
+    (18, 0,  "repurpose_avond",    ["python3", str(BASE_DIR/"mikkie_repurpose.py"), "latest"],
+             "Avond post repurposen naar 7 platforms"),
+
+    # Instagram — auto-post
+    (9,  15, "instagram_ochtend",  ["python3", str(BASE_DIR/"mikkie_instagram.py"), "latest"],
+             "Instagram ochtend post"),
+    (18, 15, "instagram_avond",    ["python3", str(BASE_DIR/"mikkie_instagram.py"), "latest"],
+             "Instagram avond post"),
+
+    # Analytics dashboard
+    (10, 0,  "analytics_check",    ["python3", str(BASE_DIR/"mikkie_analytics.py"), "report"],
+             "Analytics dagrapport via Telegram"),
+
+    # Backup
+    (3,  0,  "nacht_backup",       ["python3", str(BASE_DIR/"mikkie_backup.py"), "run"],
+             "Nacht backup naar iCloud + GitHub"),
+
     # Dagrapport
-    (23, 55, "dagrapport",        ["python3", str(BASE_DIR/"mikkie_engagement_logger.py"), "report"],
-             "Dagelijks rapport via Telegram"),
+    (23, 55, "dagrapport",         ["python3", str(BASE_DIR/"mikkie_analytics.py"), "report"],
+             "Dagelijks analytics rapport via Telegram"),
 ]
 
 # Wekelijkse taken (dag: [(uur, min, naam, commando, beschrijving)])
