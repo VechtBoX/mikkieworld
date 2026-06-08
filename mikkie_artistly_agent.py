@@ -21,6 +21,7 @@ ARTISTLY_PASSWORD = os.environ.get("ARTISTLY_PASSWORD", "")
 OUTPUT_DIR = Path(os.environ.get("ARTISTLY_OUTPUT", os.path.expanduser("~/mikkieworld/artistly_output")))
 LOG_FILE = Path(os.path.expanduser("~/mikkieworld/artistly_agent.log"))
 STATE_FILE = Path(os.path.expanduser("~/mikkieworld/artistly_state.json"))
+SESSION_FILE = Path(os.path.expanduser("~/mikkieworld/artistly_session.json"))
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -127,28 +128,31 @@ def save_state(state):
         json.dump(state, f, indent=2, default=str)
 
 # ─── Playwright Agent ─────────────────────────────────────────────────────────
-async def login(page):
-    """Login to Artistly"""
-    log.info("Inloggen bij Artistly...")
-    await page.goto("https://app.artistly.ai/login", wait_until="networkidle")
+async def login(page, context):
+    """Login to Artistly via opgeslagen sessie-cookies (Google OAuth bypass)"""
+    # Probeer opgeslagen sessie te laden
+    if SESSION_FILE.exists():
+        log.info("Sessie-cookies laden...")
+        with open(SESSION_FILE) as f:
+            cookies = json.load(f)
+        await context.add_cookies(cookies)
+        log.info(f"{len(cookies)} cookies geladen")
+
+    # Ga naar dashboard
+    await page.goto("https://app.artistly.ai/dashboard", wait_until="networkidle")
     await asyncio.sleep(2)
 
-    # Check if already logged in
-    if "personal-designs" in page.url or "dashboard" in page.url or "choose-designer" in page.url:
-        log.info("Al ingelogd!")
-        return True
+    # Check of we ingelogd zijn
+    if "dashboard" in page.url or "choose-designer" in page.url or "personal-designs" in page.url:
+        title = await page.title()
+        if "Login" not in title and "login" not in page.url:
+            log.info("✅ Sessie geldig — ingelogd als Hendrik!")
+            return True
 
-    # Fill login form
-    try:
-        await page.fill('input[type="email"]', ARTISTLY_EMAIL)
-        await page.fill('input[type="password"]', ARTISTLY_PASSWORD)
-        await page.click('button[type="submit"]')
-        await page.wait_for_url("**/dashboard**", timeout=15000)
-        log.info("Succesvol ingelogd!")
-        return True
-    except Exception as e:
-        log.error(f"Login mislukt: {e}")
-        return False
+    log.error("❌ Sessie verlopen of niet gevonden.")
+    log.error("   Voer uit: mikkie-artistly save-session")
+    log.error("   Dan log je eenmalig in via de browser, en de agent onthoudt de sessie.")
+    return False
 
 async def generate_image(page, character_name, content_type, state):
     """Generate one image for a character and content type"""
@@ -271,12 +275,50 @@ async def download_latest_images(page, output_dir, limit=10):
     log.info(f"{downloaded} afbeeldingen gedownload naar {output_dir}")
     return downloaded
 
+async def save_session():
+    """Open een zichtbare browser zodat Hendrik kan inloggen, sla daarna de sessie op"""
+    from playwright.async_api import async_playwright
+
+    print("")
+    print("🔐 ARTISTLY SESSIE OPSLAAN")
+    print("=" * 40)
+    print("Een browser venster opent nu.")
+    print("1. Log in via Google (klik 'Login with Google')")
+    print("2. Zodra je het Artistly dashboard ziet: druk Enter hier in de terminal")
+    print("")
+
+    async with async_playwright() as p:
+        # Gebruik een zichtbare browser (niet headless)
+        browser = await p.chromium.launch(headless=False)
+        context = await browser.new_context(
+            viewport={"width": 1280, "height": 800}
+        )
+        page = await context.new_page()
+        await page.goto("https://app.artistly.ai/login")
+
+        print("Browser geopend. Log nu in via Google...")
+        print("Druk Enter zodra je het dashboard ziet: ", end="", flush=True)
+        await asyncio.get_event_loop().run_in_executor(None, input)
+
+        # Sla cookies op
+        cookies = await context.cookies()
+        SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(SESSION_FILE, "w") as f:
+            json.dump(cookies, f, indent=2)
+
+        print(f"✅ {len(cookies)} cookies opgeslagen in {SESSION_FILE}")
+        print("De agent kan nu 24/7 draaien zonder opnieuw in te loggen.")
+        print("")
+        print("Test nu: mikkie-artistly test")
+        await browser.close()
+
+
 async def run_content_batch(characters=None, content_types=None):
     """Run a batch of content generation"""
     from playwright.async_api import async_playwright
 
-    if not ARTISTLY_PASSWORD:
-        log.error("ARTISTLY_PASSWORD niet ingesteld! Gebruik: export ARTISTLY_PASSWORD='jouw_wachtwoord'")
+    if not SESSION_FILE.exists():
+        log.error("Geen sessie gevonden. Voer eerst uit: mikkie-artistly save-session")
         return
 
     if characters is None:
@@ -299,8 +341,8 @@ async def run_content_batch(characters=None, content_types=None):
         page = await context.new_page()
 
         try:
-            # Login
-            logged_in = await login(page)
+            # Login via opgeslagen sessie
+            logged_in = await login(page, context)
             if not logged_in:
                 log.error("Kan niet inloggen — agent stopt")
                 return
@@ -371,7 +413,7 @@ def main():
     parser = argparse.ArgumentParser(description="MIKKIE WORLD Artistly AI Content Agent")
     parser.add_argument("command", nargs="?", default="status",
                         choices=["start", "daemon", "covers", "coloring", "social", "stickers", "banners",
-                                 "all", "status", "log", "download", "test"],
+                                 "all", "status", "log", "download", "test", "save-session"],
                         help="Commando om uit te voeren")
     parser.add_argument("--characters", "-c", nargs="+", choices=list(CHARACTERS.keys()),
                         help="Specifieke karakters (standaard: alle 7)")
@@ -407,11 +449,15 @@ def main():
         else:
             print("Geen log gevonden")
 
+    elif args.command == "save-session":
+        print("🔐 Sessie opslaan via browser login...")
+        asyncio.run(save_session())
+
     elif args.command == "test":
         print("🧪 Test: 1 afbeelding genereren (MIKKIE gumroad cover)...")
-        if not ARTISTLY_PASSWORD:
-            print("❌ ARTISTLY_PASSWORD niet ingesteld!")
-            print("   Gebruik: export ARTISTLY_PASSWORD='jouw_wachtwoord'")
+        if not SESSION_FILE.exists():
+            print("❌ Geen sessie gevonden. Voer eerst uit:")
+            print("   mikkie-artistly save-session")
             return
         asyncio.run(run_content_batch(
             characters=["MIKKIE"],
