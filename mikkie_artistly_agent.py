@@ -622,8 +622,12 @@ async def generate_image(page, prompt_data):
 
         await asyncio.sleep(2)
 
-        # Stap 3: Wacht kort zodat de textarea in de DOM staat
-        await asyncio.sleep(1)
+        # Stap 3: Wacht tot textarea echt in de DOM staat (max 10 seconden)
+        try:
+            await page.wait_for_selector('textarea[placeholder="Enter prompt here"]', timeout=10000)
+        except Exception:
+            log.error(f"   ❌ Textarea niet gevonden voor {char_id}")
+            return False
 
         # Stap 4: Vul textarea via JS (React-compatible native value setter)
         filled = await page.evaluate("""
@@ -674,7 +678,7 @@ async def generate_image(page, prompt_data):
         if folder_ok:
             log.info(f"   Folder '{folder}' geselecteerd")
 
-        await asyncio.sleep(500)
+        await asyncio.sleep(1)
 
         # Stap 6: Klik Generate Image via ID
         clicked = await page.evaluate("""
