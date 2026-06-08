@@ -637,6 +637,13 @@ async def generate_image(page, prompt_data):
 
         await asyncio.sleep(2)
 
+        # DEBUG: screenshot na klik om te zien wat er op het scherm staat
+        try:
+            await page.screenshot(path=os.path.expanduser('~/mikkieworld/debug_after_click.png'))
+            log.info("   📸 Debug screenshot opgeslagen: ~/mikkieworld/debug_after_click.png")
+        except Exception as e:
+            log.warning(f"   Screenshot mislukt: {e}")
+
         # Stap 3: Wacht op textarea (altijd aanwezig in DOM, ook voor klik)
         # Gebruik state='attached' omdat het element al in DOM staat maar mogelijk niet visible
         try:
