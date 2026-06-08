@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.mikkieworld.artistly</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/hendrikbroeze/mikkieworld/mikkie_artistly_agent.py</string>
+        <string>daemon</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>ARTISTLY_EMAIL</key>
+        <string>hendrik.broeze@gmail.com</string>
+        <key>ARTISTLY_PASSWORD</key>
+        <string>VERVANG_DIT_MET_JOUW_WACHTWOORD</string>
+        <key>ARTISTLY_OUTPUT</key>
+        <string>/Users/hendrikbroeze/mikkieworld/artistly_output</string>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/hendrikbroeze/mikkieworld/artistly_agent.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/hendrikbroeze/mikkieworld/artistly_agent_error.log</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/hendrikbroeze/mikkieworld</string>
+</dict>
+</plist>
