@@ -33,6 +33,35 @@ echo ""
 
 # ─── Functies ─────────────────────────────────────────────────────────────────
 
+install_packages() {
+    echo -e "${GOLD}📦 Python packages controleren...${RESET}"
+    
+    local packages=("requests" "tweepy" "openai" "pillow" "selenium" "schedule" "python-telegram-bot" "python-dotenv")
+    local missing_pkgs=()
+    
+    for pkg in "${packages[@]}"; do
+        # Controleer import naam (python-telegram-bot importeert als 'telegram')
+        import_name="$pkg"
+        if [ "$pkg" = "python-telegram-bot" ]; then import_name="telegram"; fi
+        if [ "$pkg" = "pillow" ]; then import_name="PIL"; fi
+        if [ "$pkg" = "python-dotenv" ]; then import_name="dotenv"; fi
+        
+        if ! python3 -c "import $import_name" 2>/dev/null; then
+            missing_pkgs+=("$pkg")
+        fi
+    done
+    
+    if [ ${#missing_pkgs[@]} -gt 0 ]; then
+        echo -e "  ${GOLD}⚠️  Ontbrekende packages: ${missing_pkgs[*]}${RESET}"
+        echo -e "  ${CYAN}📥 Installeren...${RESET}"
+        pip3 install --quiet "${missing_pkgs[@]}" && \
+            echo -e "  ${GREEN}✅ Packages geïnstalleerd${RESET}" || \
+            echo -e "  ${RED}❌ Installatie mislukt — probeer handmatig: pip3 install ${missing_pkgs[*]}${RESET}"
+    else
+        echo -e "  ${GREEN}✅ Alle packages aanwezig${RESET}"
+    fi
+}
+
 check_env() {
     echo -e "${GOLD}🔍 Omgeving controleren...${RESET}"
     
@@ -184,6 +213,7 @@ CMD="${1:-start}"
 
 case "$CMD" in
     start)
+        install_packages
         check_env || exit 1
         create_folders
         start_daemons
@@ -215,6 +245,7 @@ case "$CMD" in
     restart)
         stop_daemons
         sleep 2
+        install_packages
         check_env || exit 1
         start_daemons
         ;;

@@ -75,43 +75,31 @@ def telegram(msg: str):
 
 # ─── Bewuste daemons ──────────────────────────────────────────────────────────
 # (naam, pid_bestand, start_commando, max_crashes_per_uur)
+#
+# BELANGRIJK: Voeg hier ALLEEN echte daemons toe die 24/7 draaien.
+# CLI-tools (artistly, instagram, main) zijn GEEN daemons — die worden
+# door BRAIN op schema aangeroepen. Ze hier toevoegen veroorzaakt crash-loops.
 DAEMONS = [
     (
         "BRAIN",
         BASE_DIR / "pids" / "brain.pid",
-        ["python3", str(BASE_DIR / "mikkie_brain.py"), "loop"],
+        [sys.executable, str(BASE_DIR / "mikkie_brain.py"), "loop"],
         3
-    ),
-    (
-        "MAIN",
-        BASE_DIR / "pids" / "main.pid",
-        ["python3", str(BASE_DIR / "mikkie_agent.py"), "daemon"],
-        3
-    ),
-    (
-        "ARTISTLY",
-        BASE_DIR / "pids" / "artistly.pid",
-        ["python3", str(BASE_DIR / "mikkie_artistly_agent.py"), "daemon"],
-        2
     ),
     (
         "TELEGRAM_COMMANDER",
         BASE_DIR / "pids" / "telegram_commander.pid",
-        ["python3", str(BASE_DIR / "mikkie_telegram_commander.py")],
+        [sys.executable, str(BASE_DIR / "mikkie_telegram_commander.py")],
         3
-    ),
-    (
-        "INSTAGRAM",
-        BASE_DIR / "pids" / "instagram.pid",
-        ["python3", str(BASE_DIR / "mikkie_instagram.py"), "daemon"],
-        2
     ),
     (
         "HEALER",
         BASE_DIR / "pids" / "healer.pid",
-        ["python3", str(BASE_DIR / "mikkie_healer.py"), "start"],
+        [sys.executable, str(BASE_DIR / "mikkie_healer.py"), "start"],
         2
     ),
+    # ARTISTLY, MAIN, INSTAGRAM zijn CLI-tools — worden door BRAIN aangeroepen
+    # Niet hier toevoegen — ze hebben geen 'daemon' subcommando
 ]
 
 # ─── Alle agent bestanden (voor health check) ─────────────────────────────────
@@ -238,23 +226,29 @@ def guardian_loop():
 # ─── Start / Stop ─────────────────────────────────────────────────────────────
 def start():
     if PID_FILE.exists():
-        pid = int(PID_FILE.read_text().strip())
-        try:
-            os.kill(pid, 0)
-            print(c(f"⚠️  GUARDIAN draait al (PID {pid})", YELLOW))
-            return
-        except ProcessLookupError:
-            PID_FILE.unlink()
+        pid_str = PID_FILE.read_text().strip()
+        if pid_str:
+            try:
+                pid = int(pid_str)
+                os.kill(pid, 0)
+                print(c(f"⚠️  GUARDIAN draait al (PID {pid})", YELLOW))
+                return
+            except (ProcessLookupError, ValueError):
+                PID_FILE.unlink()
 
-    pid = os.fork()
-    if pid > 0:
-        PID_FILE.write_text(str(pid))
-        print(c(f"🛡️  GUARDIAN gestart (PID {pid})", GREEN))
-        print(c(f"   Log: {LOG_FILE}", CYAN))
-        return
-
-    os.setsid()
-    guardian_loop()
+    # macOS-safe: gebruik subprocess.Popen in plaats van os.fork()
+    # os.fork() geeft 'Bad file descriptor' op macOS Python 3.12+
+    proc = subprocess.Popen(
+        [sys.executable, str(BASE_DIR / "mikkie_guardian.py"), "loop"],
+        stdout=open(LOG_DIR / "guardian_stdout.log", "a"),
+        stderr=open(LOG_DIR / "guardian_stderr.log", "a"),
+        start_new_session=True,
+        cwd=str(BASE_DIR)
+    )
+    PID_FILE.write_text(str(proc.pid))
+    print(c(f"🛡️  GUARDIAN gestart (PID {proc.pid})", GREEN))
+    print(c(f"   Log: {LOG_FILE}", CYAN))
+    print(c(f"   Stop: python3 mikkie_guardian.py stop", CYAN))
 
 def stop():
     if not PID_FILE.exists():
@@ -375,5 +369,8 @@ if __name__ == "__main__":
         health()
     elif args[0] == "list":
         list_agents()
+    elif args[0] == "loop":
+        # Draai in foreground (wordt aangeroepen door start() via subprocess.Popen)
+        guardian_loop()
     else:
-        print("Gebruik: python3 mikkie_guardian.py [start|stop|status|health|list]")
+        print("Gebruik: python3 mikkie_guardian.py [start|stop|status|health|list|loop]")

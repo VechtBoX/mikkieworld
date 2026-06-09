@@ -378,27 +378,30 @@ def daemon_loop():
 def start_daemon():
     """Start de BRAIN als achtergrond daemon."""
     if PID_FILE.exists():
-        pid = int(PID_FILE.read_text().strip())
-        try:
-            os.kill(pid, 0)
-            print(c(f"⚠️  BRAIN draait al (PID {pid})", YELLOW))
-            return
-        except ProcessLookupError:
-            PID_FILE.unlink()
+        pid_str = PID_FILE.read_text().strip()
+        if pid_str:
+            try:
+                pid = int(pid_str)
+                os.kill(pid, 0)
+                print(c(f"⚠️  BRAIN draait al (PID {pid})", YELLOW))
+                return
+            except (ProcessLookupError, ValueError):
+                PID_FILE.unlink()
 
-    # Fork naar achtergrond
-    pid = os.fork()
-    if pid > 0:
-        # Parent process
-        PID_FILE.write_text(str(pid))
-        print(c(f"🧠 BRAIN gestart (PID {pid})", GREEN))
-        print(c(f"   Log: {LOG_FILE}", CYAN))
-        print(c(f"   Stop: python3 mikkie_brain.py stop", CYAN))
-        return
-
-    # Child process — wordt de daemon
-    os.setsid()
-    daemon_loop()
+    # macOS-safe: gebruik subprocess.Popen in plaats van os.fork()
+    # os.fork() geeft 'Bad file descriptor' op macOS Python 3.12+
+    stderr_log = LOG_DIR / "brain_stderr.log"
+    proc = subprocess.Popen(
+        [sys.executable, str(BASE_DIR / "mikkie_brain.py"), "loop"],
+        stdout=open(LOG_FILE, "a"),
+        stderr=open(stderr_log, "a"),
+        start_new_session=True,
+        cwd=str(BASE_DIR)
+    )
+    PID_FILE.write_text(str(proc.pid))
+    print(c(f"🧠 BRAIN gestart (PID {proc.pid})", GREEN))
+    print(c(f"   Log: {LOG_FILE}", CYAN))
+    print(c(f"   Stop: python3 mikkie_brain.py stop", CYAN))
 
 def stop_daemon():
     """Stop de BRAIN daemon."""
