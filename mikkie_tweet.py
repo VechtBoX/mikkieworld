@@ -19,8 +19,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # X API Credentials (env vars hebben voorkeur, fallback naar ingebakken waarden)
-CK  = os.environ.get('TWITTER_API_KEY',             'rP6K529qPSroj1KFC7FNQN80P')
-CS  = os.environ.get('TWITTER_API_SECRET',          'MaY3c0s90YX3I4uYqgxuHWeoBhuOMHfdvEJnApvzK1HXRbPnq1')
+CK  = os.environ.get('TWITTER_API_KEY',             'RVSnHx5W8AmAU43vqYlp0Hy3I')
+CS  = os.environ.get('TWITTER_API_SECRET',          'sq5zA0r0I16xvKr8sTJBUL1uKz15N9B757j40kl9ENiq7R85Ka')
 AT  = os.environ.get('TWITTER_ACCESS_TOKEN',        '4823501650-p8MFQkkdPQ1xnJs1ymlnSeqdsKEG4ZveGBy1BM3')
 ATS = os.environ.get('TWITTER_ACCESS_TOKEN_SECRET', 'n1nXUMi9ANKy1Dk1n5bwC5jBYgNFAVJ7awKNjJLgTGEWu')
 
@@ -229,6 +229,80 @@ def print_help():
     print("  mikkie-tweet countdown        Post countdown tweet")
     print("  mikkie-tweet custom Tekst     Post custom tweet")
     print("  mikkie-tweet schedule         Toon tweet schema")
+    print("  mikkie-tweet review           Bekijk en verstuur klaarstaande posts")
+
+
+def cmd_review():
+    """Toon alle klaarstaande posts — kies welke je wilt versturen."""
+    from pathlib import Path
+    files = sorted(SOCIAL_DIR.glob("*.txt"), key=lambda f: f.stat().st_mtime, reverse=True)
+    pending = [f for f in files if not already_posted(str(f))]
+    if not pending:
+        print("ℹ️  Geen klaarstaande posts gevonden")
+        print(f"   Posts staan in: {SOCIAL_DIR}")
+        return
+    print(f"\n📋 {len(pending)} klaarstaande post(s):\n")
+    for i, f in enumerate(pending[:5], 1):
+        content_txt = f.read_text(encoding="utf-8")
+        lines = content_txt.split("\n")
+        sep_idx = None
+        for j, line in enumerate(lines):
+            if line.count("\u2500") > 5:
+                sep_idx = j
+        if sep_idx is not None:
+            post_text = "\n".join(lines[sep_idx + 1:]).strip()
+        else:
+            post_lines = []
+            in_post = False
+            for line in lines:
+                if in_post and line.strip():
+                    post_lines.append(line)
+                if "HEART:" in line:
+                    in_post = True
+            post_text = "\n".join(post_lines).strip()
+        if len(post_text) > 280:
+            post_text = post_text[:277] + "..."
+        print(f"[{i}] {f.name}")
+        print(f"    {post_text[:120]}...")
+        print(f"    Tekens: {len(post_text)}")
+        print()
+    choice = input(f"Welke post versturen? (1-{min(len(pending),5)}, of Enter om te annuleren): ").strip()
+    if not choice:
+        print("Geannuleerd.")
+        return
+    try:
+        idx = int(choice) - 1
+        chosen = pending[idx]
+        content_txt = chosen.read_text(encoding="utf-8")
+        lines = content_txt.split("\n")
+        sep_idx = None
+        for j, line in enumerate(lines):
+            if line.count("\u2500") > 5:
+                sep_idx = j
+        if sep_idx is not None:
+            post_text = "\n".join(lines[sep_idx + 1:]).strip()
+        else:
+            post_lines = []
+            in_post = False
+            for line in lines:
+                if in_post and line.strip():
+                    post_lines.append(line)
+                if "HEART:" in line:
+                    in_post = True
+            post_text = "\n".join(post_lines).strip()
+        if len(post_text) > 280:
+            post_text = post_text[:277] + "..."
+        print(f"\n📄 Post:\n{post_text}\n")
+        confirm = input("Versturen op X? (y/n): ")
+        if confirm.lower() == "y":
+            tid = post_tweet(post_text)
+            if tid:
+                mark_posted(str(chosen), tid)
+                print(f"✅ Geplaatst! https://x.com/mikkieworld777/status/{tid}")
+            else:
+                print("❌ Post mislukt")
+    except (ValueError, IndexError):
+        print("Ongeldige keuze.")
 
 cmd = sys.argv[1] if len(sys.argv) > 1 else 'help'
 if cmd == 'auto':
@@ -246,5 +320,7 @@ elif cmd == 'custom':
     cmd_custom(' '.join(sys.argv[2:]))
 elif cmd == 'schedule':
     cmd_schedule()
+elif cmd == 'review':
+    cmd_review()
 else:
     print_help()
