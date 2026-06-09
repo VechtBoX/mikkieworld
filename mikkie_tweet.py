@@ -21,8 +21,8 @@ from pathlib import Path
 # X API Credentials (env vars hebben voorkeur, fallback naar ingebakken waarden)
 CK  = os.environ.get('TWITTER_API_KEY',             'rP6K529qPSroj1KFC7FNQN80P')
 CS  = os.environ.get('TWITTER_API_SECRET',          'MaY3c0s90YX3I4uYqgxuHWeoBhuOMHfdvEJnApvzK1HXRbPnq1')
-AT  = os.environ.get('TWITTER_ACCESS_TOKEN',        '4823501650-IUvIZnJ7bo7ELxJ3gWia8HjMfWMiR84ln6EYRQn')
-ATS = os.environ.get('TWITTER_ACCESS_TOKEN_SECRET', 'KpjWW01xHdussYau3sz5a9kN9ZcLJgxZ79syADU2fGGjs')
+AT  = os.environ.get('TWITTER_ACCESS_TOKEN',        '4823501650-p8MFQkkdPQ1xnJs1ymlnSeqdsKEG4ZveGBy1BM3')
+ATS = os.environ.get('TWITTER_ACCESS_TOKEN_SECRET', 'n1nXUMi9ANKy1Dk1n5bwC5jBYgNFAVJ7awKNjJLgTGEWu')
 
 SOCIAL_DIR  = Path.home() / "MIKKIE_WORLD" / "SOCIAL" / "X_Twitter"
 POSTED_LOG  = Path.home() / "MIKKIE_WORLD" / "LOGS" / "posted_tweets.json"
