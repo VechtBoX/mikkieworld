@@ -27,7 +27,7 @@ LOG_DIR="$WORLD_DIR/LOGS"
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════════════════╗${RESET}"
 echo -e "${BOLD}║  🌟 MIKKIE WORLD — Agent Ecosysteem v2.0                ║${RESET}"
-echo -e "${BOLD}║  Avontuurlijk · Moedig · Magisch                        ║${RESET}"
+echo -e "${BOLD}║  Blijf Altijd Kind. Met je kids.                        ║${RESET}"
 echo -e "${BOLD}╚══════════════════════════════════════════════════════════╝${RESET}"
 echo ""
 
