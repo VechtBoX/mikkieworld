@@ -259,11 +259,20 @@ def run_task(naam: str, commando: list, beschrijving: str, state: dict) -> bool:
         )
         if result.returncode == 0:
             log.info(f"✅ {naam} — geslaagd")
+            # Toon relevante output (opgeslagen bestanden, scores)
+            if result.stdout:
+                for line in result.stdout.strip().split('\n'):
+                    line = line.strip()
+                    if any(kw in line for kw in ['💾', '✅', '❤️', 'Opgeslagen', 'score', 'APPROVED', 'Tekens', 'SOCIAL']):
+                        log.info(f"   → {line}")
             mark_task_done(naam, state)
             return True
         else:
             log.error(f"❌ {naam} — mislukt (code {result.returncode})")
-            log.error(f"   stderr: {result.stderr[:200]}")
+            if result.stderr:
+                log.error(f"   stderr: {result.stderr[:300]}")
+            if result.stdout:
+                log.info(f"   stdout: {result.stdout[:300]}")
             telegram(f"⚠️ MIKKIE BRAIN\n<b>{naam}</b> mislukt\n{result.stderr[:200]}")
             return False
     except subprocess.TimeoutExpired:
@@ -328,6 +337,14 @@ def run_all_now():
             geslaagd += 1
 
     log.info(f"✅ Routine klaar: {geslaagd}/{len(taken)} taken geslaagd")
+    # Toon waar de posts zijn opgeslagen
+    social_dir = Path.home() / "MIKKIE_WORLD" / "SOCIAL" / "X_Twitter"
+    if social_dir.exists():
+        posts = sorted(social_dir.glob("*.txt"), key=lambda f: f.stat().st_mtime, reverse=True)[:5]
+        if posts:
+            log.info(f"📁 Posts opgeslagen in: ~/MIKKIE_WORLD/SOCIAL/X_Twitter/")
+            for p in posts:
+                log.info(f"   📄 {p.name}")
     telegram(f"✅ MIKKIE BRAIN klaar\n{geslaagd}/{len(taken)} taken geslaagd")
 
 # ─── Daemon loop ──────────────────────────────────────────────────────────────
