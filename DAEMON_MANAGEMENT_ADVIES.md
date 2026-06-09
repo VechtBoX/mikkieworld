@@ -72,9 +72,10 @@ pid_file.write_text(str(proc.pid))
 
 **Wat:** De industriestandaard process manager voor Python daemons. Gebruikt door Netflix, Spotify, duizenden startups.
 
-**Installatie:**
+**Installatie op macOS:**
 ```bash
-pip3 install supervisor
+# macOS: gebruik brew (NIET pip3 — dat blokkeert macOS via PEP 668)
+brew install supervisor
 ```
 
 **Configuratie** (`~/mikkieworld/supervisord.conf`):
@@ -112,11 +113,11 @@ serverurl=http://127.0.0.1:9001
 
 **Gebruik:**
 ```bash
-supervisord -c ~/mikkieworld/supervisord.conf    # Start
-supervisorctl status                              # Status alle agents
-supervisorctl restart brain                       # Herstart BRAIN
-supervisorctl tail -f brain                       # Live logs
-supervisorctl stop all                            # Stop alles
+supervisord -c ~/mikkieworld/supervisord.conf                        # Start
+supervisorctl -c ~/mikkieworld/supervisord.conf status               # Status alle agents
+supervisorctl -c ~/mikkieworld/supervisord.conf restart brain        # Herstart BRAIN
+supervisorctl -c ~/mikkieworld/supervisord.conf tail -f brain        # Live logs
+supervisorctl -c ~/mikkieworld/supervisord.conf stop all             # Stop alles
 ```
 
 **Voordelen:**
@@ -247,12 +248,10 @@ Dit lost de crash-loop direct op. Geen extra tools nodig.
 **Voeg supervisord toe** als MIKKIE WORLD groeit naar 10+ daemons.
 
 ```bash
-# Installeer
-pip3 install supervisor
+# Installeer via brew (macOS-safe)
+brew install supervisor
 
-# Genereer config
-echo_supervisord_conf > ~/mikkieworld/supervisord.conf
-
+# Config staat al klaar in ~/mikkieworld/supervisord.conf
 # Start
 supervisord -c ~/mikkieworld/supervisord.conf
 ```

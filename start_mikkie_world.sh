@@ -40,7 +40,6 @@ install_packages() {
     local missing_pkgs=()
     
     for pkg in "${packages[@]}"; do
-        # Controleer import naam (python-telegram-bot importeert als 'telegram')
         import_name="$pkg"
         if [ "$pkg" = "python-telegram-bot" ]; then import_name="telegram"; fi
         if [ "$pkg" = "pillow" ]; then import_name="PIL"; fi
@@ -53,10 +52,16 @@ install_packages() {
     
     if [ ${#missing_pkgs[@]} -gt 0 ]; then
         echo -e "  ${GOLD}⚠️  Ontbrekende packages: ${missing_pkgs[*]}${RESET}"
-        echo -e "  ${CYAN}📥 Installeren...${RESET}"
-        pip3 install --quiet "${missing_pkgs[@]}" && \
+        echo -e "  ${CYAN}📥 Installeren (macOS-safe)...${RESET}"
+        # macOS Homebrew Python vereist --break-system-packages (PEP 668)
+        # Dit is veilig voor user-scripts — het raakt Homebrew zelf niet
+        pip3 install --quiet --break-system-packages "${missing_pkgs[@]}" 2>/dev/null && \
             echo -e "  ${GREEN}✅ Packages geïnstalleerd${RESET}" || \
-            echo -e "  ${RED}❌ Installatie mislukt — probeer handmatig: pip3 install ${missing_pkgs[*]}${RESET}"
+        # Fallback: probeer pip3 install --user
+        pip3 install --quiet --user "${missing_pkgs[@]}" 2>/dev/null && \
+            echo -e "  ${GREEN}✅ Packages geïnstalleerd (--user)${RESET}" || \
+            echo -e "  ${RED}❌ Installatie mislukt — voer handmatig uit:${RESET}"
+            echo -e "  ${GOLD}  pip3 install --break-system-packages ${missing_pkgs[*]}${RESET}"
     else
         echo -e "  ${GREEN}✅ Alle packages aanwezig${RESET}"
     fi
