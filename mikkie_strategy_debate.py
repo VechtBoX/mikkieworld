@@ -23,6 +23,7 @@ voor zijn 7-jarige zoontje Mikkie. Het merk heeft:
 - Platforms: mikkie.world website, Gumroad, X/Twitter, Instagram, Pinterest, TikTok
 - Lancering: 7 juli 2026
 - Merkwaarden: Avontuurlijk · Moedig · Magisch
+- Tagline: Blijf Altijd Kind. Met je kids. / Always Be a Kid. With your kids.
 - 9 agents gebouwd, 18 nog te bouwen
 - Doel: kinderen inspireren om buiten te spelen, wereldwijd bereik
 

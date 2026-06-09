@@ -171,7 +171,7 @@ Caption max 150 tekens. Hashtags: mix Nederlands + Engels + trending."""
     all_tags = (BASE_HASHTAGS["nl"][:5] + BASE_HASHTAGS["en"][:5] + BASE_HASHTAGS["trending"][:5])
     return {
         "hook": f"Ontmoet {character['name']} — de {character['role']}! 🌟",
-        "caption": f"MIKKIE WORLD — {character['name']} gaat op avontuur! Avontuurlijk · Moedig · Magisch ✨",
+        "caption": f"MIKKIE WORLD — {character['name']} gaat op avontuur! Avontuurlijk · Moedig · Magisch | Blijf Altijd Kind. Met je kids. ✨",
         "cta": "Gratis kleurplaten via link in bio! 👇",
         "hashtags": " ".join(all_tags),
         "video_idea": f"Toon {character['name']} in een avontuurlijke scene, gebruik MIKKIE WORLD muziek",

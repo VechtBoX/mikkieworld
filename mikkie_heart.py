@@ -68,6 +68,8 @@ MIKKIE WORLD context:
 - Kindermerk voor kinderen van 4-10 jaar
 - Kernmissie: kinderen inspireren om buiten te spelen
 - Merkwaarden: Avontuurlijk · Moedig · Magisch
+- Tagline (NL): Blijf Altijd Kind. Met je kids.
+- Tagline (EN): Always Be a Kid. With your kids.
 - Oprichter: Hendrik Broeze, voor zijn zoontje Mikkie (7 jaar)
 - Karakters: MIKKIE, BUBBLES, KNOEST, FIDO, NYX, ZERA, ORA
 

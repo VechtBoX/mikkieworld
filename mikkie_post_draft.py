@@ -139,7 +139,7 @@ def generate_post(
     system_prompt = f"""Je bent de copywriter van MIKKIE WORLD — een magisch kindermerk.
 Je schrijft social media posts die kinderen (4-10 jaar) en hun ouders inspireren om buiten te spelen.
 
-MERKWAARDEN: Avontuurlijk · Moedig · Magisch
+MERKWAARDEN: Avontuurlijk · Moedig · Magisch | Blijf Altijd Kind. Met je kids.
 TAAL: Nederlands
 KARAKTER VAN VANDAAG: {karakter} — {kar_info['rol']} — bewaker van {kar_info['bewaker']}
 

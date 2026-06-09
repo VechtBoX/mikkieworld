@@ -1,6 +1,8 @@
 # 🌟 MIKKIE WORLD — Agent Ecosysteem v2.0
 
 > **Avontuurlijk · Moedig · Magisch**
+> 🇳🇱 *Blijf Altijd Kind. Met je kids.*
+> 🇬🇧 *Always Be a Kid. With your kids.*
 > 
 > Een volledig geautomatiseerd 24/7 content systeem voor het MIKKIE WORLD kindermerk.
 > Gebouwd door Hendrik voor zijn zoontje Mikkie.

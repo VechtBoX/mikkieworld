@@ -49,7 +49,7 @@ UPDATES = [
             '</ul>'
             '<p>Elke missie past op een A4 en heeft een tekenvak voor jouw kind.</p>'
             '<p><strong>100% gratis. Geen creditcard nodig.</strong></p>'
-            '<p><em>Van MIKKIE WORLD — avontuur voor elk kind. Lancering: 7 juli 2026 om 07:07</em></p>'
+            '<p><em>Van MIKKIE WORLD — Blijf Altijd Kind. Met je kids. Lancering: 7 juli 2026 om 07:07</em></p>'
         ),
     },
 
@@ -81,7 +81,7 @@ UPDATES = [
             '<p>Verjaardagskaarten, posters, knutselprojecten, schoolprojecten, '
             'digitale stickers, uitnodigingen en meer.</p>'
             '<p><strong>Direct downloaden na betaling.</strong></p>'
-            '<p><em>MIKKIE WORLD — avontuur voor elk kind | mikkieworld.com</em></p>'
+            '<p><em>MIKKIE WORLD — Blijf Altijd Kind. Met je kids. | mikkieworld.com</em></p>'
         ),
     },
 
@@ -109,7 +109,7 @@ UPDATES = [
             '<p><strong>Leeftijd:</strong> 4-10 jaar | '
             '<strong>Duur per missie:</strong> 20-45 minuten | '
             '<strong>Locatie:</strong> Buiten (water, regen, plas)</p>'
-            '<p><em>MIKKIE WORLD — avontuur voor elk kind | Lancering 7/7/2026</em></p>'
+            '<p><em>MIKKIE WORLD — Blijf Altijd Kind. Met je kids. | Lancering 7/7/2026</em></p>'
         ),
     },
     {
@@ -136,7 +136,7 @@ UPDATES = [
             '<p><strong>Leeftijd:</strong> 5-12 jaar | '
             '<strong>Duur per missie:</strong> 30-60 minuten | '
             '<strong>Locatie:</strong> Bos of park</p>'
-            '<p><em>MIKKIE WORLD — avontuur voor elk kind | Lancering 7/7/2026</em></p>'
+            '<p><em>MIKKIE WORLD — Blijf Altijd Kind. Met je kids. | Lancering 7/7/2026</em></p>'
         ),
     },
     {
@@ -163,7 +163,7 @@ UPDATES = [
             '<p><strong>Leeftijd:</strong> 6-12 jaar | '
             '<strong>Duur per missie:</strong> 20-40 minuten | '
             '<strong>Locatie:</strong> Tuin of park (avond/nacht)</p>'
-            '<p><em>MIKKIE WORLD — avontuur voor elk kind | Lancering 7/7/2026</em></p>'
+            '<p><em>MIKKIE WORLD — Blijf Altijd Kind. Met je kids. | Lancering 7/7/2026</em></p>'
         ),
     },
     {
@@ -189,7 +189,7 @@ UPDATES = [
             '<p><strong>Leeftijd:</strong> 6-12 jaar | '
             '<strong>Duur per missie:</strong> 30-60 minuten | '
             '<strong>Locatie:</strong> Buiten (tuin, park, straat)</p>'
-            '<p><em>MIKKIE WORLD — avontuur voor elk kind | Lancering 7/7/2026</em></p>'
+            '<p><em>MIKKIE WORLD — Blijf Altijd Kind. Met je kids. | Lancering 7/7/2026</em></p>'
         ),
     },
     {
@@ -216,7 +216,7 @@ UPDATES = [
             '<p><strong>Leeftijd:</strong> 4-10 jaar | '
             '<strong>Duur per missie:</strong> 30-60 minuten | '
             '<strong>Locatie:</strong> Bos, park of tuin</p>'
-            '<p><em>MIKKIE WORLD — avontuur voor elk kind | Lancering 7/7/2026</em></p>'
+            '<p><em>MIKKIE WORLD — Blijf Altijd Kind. Met je kids. | Lancering 7/7/2026</em></p>'
         ),
     },
     {
@@ -243,7 +243,7 @@ UPDATES = [
             '<p><strong>Leeftijd:</strong> 6-12 jaar | '
             '<strong>Duur per missie:</strong> 30-60 minuten | '
             '<strong>Locatie:</strong> Buiten (tuin, park)</p>'
-            '<p><em>MIKKIE WORLD — avontuur voor elk kind | Lancering 7/7/2026</em></p>'
+            '<p><em>MIKKIE WORLD — Blijf Altijd Kind. Met je kids. | Lancering 7/7/2026</em></p>'
         ),
     },
 
