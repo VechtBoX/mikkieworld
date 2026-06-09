@@ -106,6 +106,12 @@ DAEMONS = [
         ["python3", str(BASE_DIR / "mikkie_instagram.py"), "daemon"],
         2
     ),
+    (
+        "HEALER",
+        BASE_DIR / "pids" / "healer.pid",
+        ["python3", str(BASE_DIR / "mikkie_healer.py"), "start"],
+        2
+    ),
 ]
 
 # ─── Alle agent bestanden (voor health check) ─────────────────────────────────
@@ -132,6 +138,11 @@ ALL_AGENTS = [
     {"name": "GUMROAD",            "file": "mikkie_gumroad.py",           "daemon": False},
     {"name": "DASHBOARD",          "file": "mikkie_dashboard.py",         "daemon": False},
     {"name": "CLI",                "file": "mikkie_cli.py",               "daemon": False},
+    {"name": "HEALER",             "file": "mikkie_healer.py",            "daemon": True},
+    {"name": "TEST_WEBSITE",       "file": "mikkie_test_website.py",      "daemon": False},
+    {"name": "TEST_PAYMENTS",      "file": "mikkie_test_payments.py",     "daemon": False},
+    {"name": "TEST_AGENTS",        "file": "mikkie_test_agents.py",       "daemon": False},
+    {"name": "SITE_AGENT",         "file": "mikkie_site_agent.py",        "daemon": False},
 ]
 
 # ─── Crash tracking ───────────────────────────────────────────────────────────

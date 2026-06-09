@@ -218,6 +218,8 @@ WEEKSCHEMA = {
                 "Zondag: product roadmap updaten"),
         (12, 0,  "zondag_covers_upload",  ["python3", str(BASE_DIR/"mikkie_gumroad_bundle.py"), "upload-covers"],
                 "Zondag: Gumroad covers uploaden"),
+        (13, 0,  "zondag_full_test",      ["python3", str(BASE_DIR/"mikkie_healer.py"), "full"],
+                "Zondag: volledige systeem test + rapport via HEALER"),
     ],
 }
 
