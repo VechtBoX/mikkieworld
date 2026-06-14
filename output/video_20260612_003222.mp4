@@ -1,0 +1,11 @@
+MIKKIE WORLD Video
+Prompt: Een schattige aap en olifant bouwen een boomhut in het bos
+
+MoneyPrinterTurbo STDOUT:
+
+
+MoneyPrinterTurbo STDERR:
+Traceback (most recent call last):
+  File "/Users/hendrikbroeze/MoneyPrinterTurbo/main.py", line 1, in <module>
+    import uvicorn
+ModuleNotFoundError: No module named 'uvicorn'

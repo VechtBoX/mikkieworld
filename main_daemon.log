@@ -1,0 +1,22 @@
+
+MIKKIE WORLD — 24/7 AI Agent
+==============================
+Volledig autonome agent die draait op de achtergrond op jouw Mac.
+
+MODULES:
+  1. GUMROAD CONFIGURATIE  — producten aanmaken/bijwerken, prijzen, beschrijvingen
+  2. SALES MONITOR         — elke 5 min nieuwe verkopen detecteren
+  3. MAILCHIMP SYNC        — kopers automatisch toevoegen
+  4. AI CONTENT GENERATOR  — Grok schrijft tweets, beschrijvingen, emails, promoties
+  5. TWITTER AUTOMATIE     — dagelijkse posts + verkoop-tweets
+  6. CONTENT KALENDER      — wekelijkse content-cyclus
+  7. DAGRAPPORT            — dagelijks overzicht in log
+
+Start:    python3 ~/mikkieworld/mikkie_agent.py
+Stop:     mikkie-agent stop
+Status:   mikkie-agent status
+Log:      mikkie-agent log
+Eenmalig: mikkie-agent setup     (Gumroad volledig configureren)
+          mikkie-agent content   (nieuwe content genereren)
+          mikkie-agent tweet     (nu een tweet posten)
+

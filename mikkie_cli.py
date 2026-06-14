@@ -470,3 +470,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ==================== MIKKIE VIDEO AGENT ====================
+if len(sys.argv) > 1 and sys.argv[1] == "video":
+    from mikkie_video import generate_video
+    prompt = " ".join(sys.argv[2:]) if len(sys.argv) > 2 else input("Geef een prompt: ")
+    generate_video(prompt)
+    sys.exit(0)
